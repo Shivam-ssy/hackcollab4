@@ -1,0 +1,22 @@
+{
+  "name": "hackcollab",
+  "version": "1.0.0",
+  "description": "<div align=\"center\">   <img src=\"frontend/public/logo3.jpg\" alt=\"HackCollab - College Event Management System Logo\" width=\"800\" /> </div>",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run frontend\" \"npm run gateway\" \"npm run auth\" \"npm run event\" \"npm run notification\" \"npm run leaderboard\" \"npm run settings\"",
+    "frontend": "cd frontend && npm run dev",
+    "gateway": "cd backend/gateway && npm start",
+    "auth": "cd backend/auth-service && npm run dev",
+    "event": "cd backend/event-service && npm run dev",
+    "notification": "cd backend/notification-service && npm run dev",
+    "leaderboard": "cd backend/leaderboard-service && npm run dev",
+    "settings": "cd backend/settings-service && npm run dev"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
