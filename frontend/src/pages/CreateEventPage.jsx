@@ -11,16 +11,18 @@ const CreateEventPage = () => {
   const [error, setError] = useState(null);
 
   // Check if user is authorized to create events
-  const canCreateEvent = user && (user.role === 'organizer' || user.role === 'admin');
+  const isOrganizerOrAdmin = user && (user.role === 'organizer' || user.role === 'COLLEGE_ADMIN' || user.role === 'admin' || user.role === 'SUPER_ADMIN');
+  const canCreateEvent = isOrganizerOrAdmin;
 
   // Initial form data
   const initialEventData = {
     title: '',
     description: '',
-    date: '',
-    time: '',
+    startDate: '',
+    endDate: '',
     location: '',
-    capacity: 50,
+    maxTeamSize: 4,
+    registrationFee: 0,
     tags: [],
     image: ''
   };
@@ -35,14 +37,12 @@ const CreateEventPage = () => {
     setError(null);
 
     try {
-      // Combine date and time fields
-      const combinedData = {
-        ...eventData,
-        date: new Date(`${eventData.date}T${eventData.time}`).toISOString(),
-      };
+      // Create a copy of the event data
+      const combinedData = { ...eventData };
       
-      // Remove the separate time field
-      delete combinedData.time;
+      // Ensure date strings are formatted properly for the backend if needed
+      combinedData.startDate = new Date(eventData.startDate).toISOString();
+      combinedData.endDate = new Date(eventData.endDate).toISOString();
       
       // Add creator information
       combinedData.createdBy = user._id || user.id;

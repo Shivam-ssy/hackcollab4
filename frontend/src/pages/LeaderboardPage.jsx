@@ -152,7 +152,7 @@ const LeaderboardPage = () => {
             )}
             
             {/* Score update form for organizers/admins */}
-            {isAuthenticated && user && (user.role === 'admin' || user.role === 'organizer') && (
+            {isAuthenticated && user && (user.role === 'admin' || user.role === 'SUPER_ADMIN' || user.role === 'organizer' || user.role === 'COLLEGE_ADMIN') && (
               <Box mb={4}>
                 <UpdateScoreForm 
                   eventId={eventId} 

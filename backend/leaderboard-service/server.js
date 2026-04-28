@@ -55,7 +55,7 @@ app.use('/api', limiter);
 app.use(socketMiddleware);
 
 // Define routes
-app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/', leaderboardRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
@@ -66,7 +66,7 @@ app.get('/health', (req, res) => {
 app.use(errorHandler);
 
 // Handle 404 routes
-app.all('/{*any}', (req, res)  => {
+app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: `Route not found: ${req.originalUrl}`

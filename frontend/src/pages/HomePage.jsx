@@ -8,6 +8,7 @@ const HomePage = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState([]);
+  const [myRegistrations, setMyRegistrations] = useState([]);
   const [error, setError] = useState(null);
   
   // Default placeholder image for events without images
@@ -34,14 +35,24 @@ const HomePage = () => {
         });
         
         // Sort events by date (upcoming first)
-        eventsArray.sort((a, b) => new Date(a.date) - new Date(b.date));
+        eventsArray.sort((a, b) => new Date(a.startDate || a.date) - new Date(b.startDate || b.date));
         
         // Take only the first 3 upcoming events
         const upcomingEventsData = eventsArray
-          .filter(event => new Date(event.date) >= new Date())
+          .filter(event => new Date(event.startDate || event.date) >= new Date())
           .slice(0, 3);
         
         setEvents(upcomingEventsData);
+
+        // Fetch my registrations
+        if (user) {
+          try {
+            const regsData = await eventService.getMyRegistrations();
+            setMyRegistrations(Array.isArray(regsData) ? regsData : []);
+          } catch (regErr) {
+            console.warn('Failed to fetch my registrations:', regErr);
+          }
+        }
         
         // Fetch announcements
         const announcementsData = await announcementService.getAllAnnouncements({
@@ -143,8 +154,51 @@ const HomePage = () => {
       </section>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Upcoming Events Section */}
-        <section className="lg:col-span-2">
+        {/* Main Content Section */}
+        <section className="lg:col-span-2 space-y-8">
+          
+          {/* My Registered Events Section */}
+          {user && myRegistrations.length > 0 && (
+            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+              <div className="bg-gradient-to-r from-green-500 to-teal-600 px-6 py-4">
+                <h2 className="text-2xl font-bold text-white">My Registered Hackathons</h2>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {myRegistrations.map(({ event, participation }) => (
+                    <div key={event._id} className="bg-green-50 border border-green-100 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition duration-300">
+                      <div className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-xl font-semibold text-gray-800">{event.title}</h3>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${participation.paymentStatus === 'PAID' ? 'bg-green-200 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            {participation.paymentStatus}
+                          </span>
+                        </div>
+                        <div className="flex items-center text-gray-600 mb-2 text-sm">
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                          </svg>
+                          <span>{new Date(event.date || event.startDate).toLocaleDateString()}</span>
+                        </div>
+                        <div className="mt-4 flex space-x-2">
+                          <Link to={`/events/${event._id}`} className="flex-1 text-center bg-green-600 hover:bg-green-700 text-white py-2 px-2 rounded-md transition duration-300 text-sm">
+                            View Details
+                          </Link>
+                          {participation.paymentStatus === 'PAID' && (
+                            <Link to={`/events/${event._id}/teams`} className="flex-1 text-center bg-teal-600 hover:bg-teal-700 text-white py-2 px-2 rounded-md transition duration-300 text-sm">
+                              Manage Team
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Upcoming Events Section */}
           <div className="bg-white rounded-xl shadow-md overflow-hidden">
             <div className="bg-gradient-to-r from-purple-500 to-indigo-600 px-6 py-4">
               <h2 className="text-2xl font-bold text-white">Upcoming Events</h2>
@@ -170,7 +224,7 @@ const HomePage = () => {
                           <h3 className="text-xl font-semibold text-gray-800">{event.title}</h3>
                           {/* Status Badge */}
                           {(() => {
-                            const eventDate = new Date(event.date);
+                            const eventDate = new Date(event.startDate || event.date);
                             const today = new Date();
                             today.setHours(0, 0, 0, 0); // Reset time to start of day
                             
@@ -202,7 +256,7 @@ const HomePage = () => {
                           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                           </svg>
-                          <span>{new Date(event.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                          <span>{new Date(event.startDate || event.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                         </div>
                         <div className="flex items-center text-gray-600 mb-2">
                           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

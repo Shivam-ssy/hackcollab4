@@ -90,6 +90,7 @@ const ProfilePage = () => {
     if (!profileData) return null;
 
     switch (profileData.role) {
+      case 'SUPER_ADMIN':
       case 'admin':
         return (
           <div className="mt-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
@@ -103,6 +104,7 @@ const ProfilePage = () => {
             </ul>
           </div>
         );
+      case 'COLLEGE_ADMIN':
       case 'organizer':
         return (
           <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
@@ -116,6 +118,7 @@ const ProfilePage = () => {
             </ul>
           </div>
         );
+      case 'STUDENT':
       case 'participant':
         return (
           <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
@@ -188,8 +191,11 @@ const ProfilePage = () => {
                     <h2 className="text-xl font-semibold text-gray-800">
                       {profileData.firstName} {profileData.lastName}
                     </h2>
-                    <span className={`mt-2 py-1 px-3 rounded-full text-xs ${profileData.role === 'admin' ? 'bg-purple-200 text-purple-800' : profileData.role === 'organizer' ? 'bg-blue-200 text-blue-800' : 'bg-green-200 text-green-800'}`}>
-                      {profileData.role.charAt(0).toUpperCase() + profileData.role.slice(1)}
+                    <span className={`mt-2 py-1 px-3 rounded-full text-xs ${
+                      (profileData.role === 'admin' || profileData.role === 'SUPER_ADMIN') ? 'bg-purple-200 text-purple-800' : 
+                      (profileData.role === 'organizer' || profileData.role === 'COLLEGE_ADMIN') ? 'bg-blue-200 text-blue-800' : 
+                      'bg-green-200 text-green-800'}`}>
+                      {profileData.role ? profileData.role.replace('_', ' ') : 'Participant'}
                     </span>
                   </div>
                 </div>
@@ -243,11 +249,12 @@ const ProfilePage = () => {
                           type="text"
                           id="college"
                           name="college"
-                          value={formData.college}
+                          value={formData.college || ''}
                           onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                          required
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-100"
+                          disabled
                         />
+                        <p className="text-xs text-gray-500 mt-1">College cannot be changed directly</p>
                       </div>
                       <div className="flex space-x-4">
                         <button

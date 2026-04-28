@@ -7,12 +7,20 @@ const OrganizerDashboardPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [events, setEvents] = useState([]);
+  const [stats, setStats] = useState({
+    totalEvents: 0,
+    activeEvents: 0,
+    upcomingEvents: 0,
+    totalRegistrations: 0,
+    revenue: 0
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // Redirect if user is not an organizer
   useEffect(() => {
-    if (user && user.role !== 'organizer') {
+    const isOrganizer = user?.role === 'organizer' || user?.role === 'COLLEGE_ADMIN';
+    if (user && !isOrganizer) {
       navigate('/home');
     }
   }, [user, navigate]);
@@ -26,14 +34,24 @@ const OrganizerDashboardPage = () => {
         setLoading(true);
         // Get all events and filter by the current organizer
         const allEvents = await eventService.getAllEvents();
-        const organizerEvents = allEvents.data.filter(event => 
-          event.createdBy === user.id
+        const organizerEvents = allEvents.data ? allEvents.data.filter(event => 
+          event.createdBy === user.id || event.collegeId === user.collegeId
+        ) : allEvents.filter(event => 
+          event.createdBy === user.id || event.collegeId === user.collegeId
         );
         
         // Sort events by date (upcoming first)
-        organizerEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+        organizerEvents.sort((a, b) => new Date(a.startDate || a.date) - new Date(b.startDate || b.date));
         
         setEvents(organizerEvents);
+
+        // Fetch precise stats from backend
+        try {
+          const statsData = await eventService.getOrganizerStats();
+          setStats(statsData);
+        } catch (statErr) {
+          console.error('Failed to fetch organizer stats:', statErr);
+        }
       } catch (err) {
         console.error('Failed to fetch events:', err);
         setError('Failed to load events. Please try again later.');
@@ -121,7 +139,7 @@ const OrganizerDashboardPage = () => {
                 <ul className="divide-y divide-gray-200">
                   {events.map(event => {
                     // Determine event status
-                    const eventDate = new Date(event.date);
+                    const eventDate = new Date(event.startDate || event.date);
                     const today = new Date();
                     today.setHours(0, 0, 0, 0); // Reset time to start of day
                     
@@ -143,7 +161,7 @@ const OrganizerDashboardPage = () => {
                     }
                     
                     // Format date
-                    const formattedDate = new Date(event.date).toLocaleDateString(undefined, {
+                    const formattedDate = new Date(event.startDate || event.date).toLocaleDateString(undefined, {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric'
@@ -177,9 +195,12 @@ const OrganizerDashboardPage = () => {
                               <p>{formattedDate}</p>
                             </div>
                           </div>
-                          <div className="mt-2">
-                            <Link to={`/events/${event._id}`} className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                          <div className="mt-4 flex space-x-3">
+                            <Link to={`/events/${event._id}`} className="text-sm font-medium text-indigo-600 hover:text-indigo-500 bg-indigo-50 px-3 py-1 rounded">
                               View details
+                            </Link>
+                            <Link to={`/events/${event._id}/submissions`} className="text-sm font-medium text-green-600 hover:text-green-500 bg-green-50 px-3 py-1 rounded">
+                              Manage Submissions & Teams
                             </Link>
                           </div>
                         </div>
@@ -197,41 +218,34 @@ const OrganizerDashboardPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="bg-white p-4 rounded-lg shadow text-center">
                 <h3 className="text-gray-500 text-sm font-medium">Total Events</h3>
-                <p className="text-3xl font-bold text-blue-600">{events.length}</p>
-                <p className="text-green-500 text-sm">{events.length > 0 ? `${events.length} events created` : 'No events yet'}</p>
+                <p className="text-3xl font-bold text-blue-600">{stats.totalEvents}</p>
+                <p className="text-green-500 text-sm">{stats.totalEvents > 0 ? `${stats.totalEvents} events created` : 'No events yet'}</p>
               </div>
               <div className="bg-white p-4 rounded-lg shadow text-center">
                 <h3 className="text-gray-500 text-sm font-medium">Registrations</h3>
                 <p className="text-3xl font-bold text-green-600">
-                  {events.reduce((total, event) => total + (event.participants ? event.participants.length : 0), 0)}
+                  {stats.totalRegistrations}
                 </p>
                 <p className="text-green-500 text-sm">Total registrations</p>
+              </div>
+              <div className="bg-white p-4 rounded-lg shadow text-center border-t-4 border-green-500">
+                <h3 className="text-gray-500 text-sm font-medium">Hackathon Revenue</h3>
+                <p className="text-3xl font-bold text-green-600">
+                  ${stats.revenue}
+                </p>
+                <p className="text-gray-500 text-sm">From registration fees</p>
               </div>
               <div className="bg-white p-4 rounded-lg shadow text-center">
                 <h3 className="text-gray-500 text-sm font-medium">Active Events</h3>
                 <p className="text-3xl font-bold text-purple-600">
-                  {events.filter(event => {
-                    const eventDate = new Date(event.date);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    const tomorrow = new Date(today);
-                    tomorrow.setDate(tomorrow.getDate() + 1);
-                    return eventDate >= today && eventDate < tomorrow;
-                  }).length}
+                  {stats.activeEvents}
                 </p>
                 <p className="text-green-500 text-sm">Events happening today</p>
               </div>
-              <div className="bg-white p-4 rounded-lg shadow text-center">
+              <div className="bg-white p-4 rounded-lg shadow text-center md:col-span-4 lg:col-span-1 lg:mt-0 lg:ml-auto lg:mr-auto">
                 <h3 className="text-gray-500 text-sm font-medium">Upcoming Events</h3>
                 <p className="text-3xl font-bold text-teal-600">
-                  {events.filter(event => {
-                    const eventDate = new Date(event.date);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    const tomorrow = new Date(today);
-                    tomorrow.setDate(tomorrow.getDate() + 1);
-                    return eventDate >= tomorrow;
-                  }).length}
+                  {stats.upcomingEvents}
                 </p>
                 <p className="text-gray-500 text-sm">Future events</p>
               </div>

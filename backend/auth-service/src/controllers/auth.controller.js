@@ -60,26 +60,28 @@ exports.register = async (req, res) => {
  */
 exports.updateProfile = async (req, res, next) => {
   try {
-    const { firstName, lastName, college } = req.body;
-    
+    const { firstName, lastName } = req.body;
+
     // Find user by ID
-    const user = await User.findById(req.user._id);
-    
+    const user = await User.findById(req.user.id);
+
     if (!user) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
-    
+
     // Update user fields
     if (firstName) user.firstName = firstName;
     if (lastName) user.lastName = lastName;
-    if (college) user.college = college;
-    
+
     // Save updated user
     await user.save();
-    
+
+    await user.populate('collegeId');
+    await user.populate('roleId');
+
     res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
@@ -88,8 +90,8 @@ exports.updateProfile = async (req, res, next) => {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        college: user.college,
-        role: user.role
+        college: user.collegeId ? user.collegeId.name : null,
+        role: user.roleId ? user.roleId.name : null
       }
     });
   } catch (error) {
@@ -168,7 +170,7 @@ exports.login = async (req, res) => {
  */
 exports.getCurrentUser = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user.id).populate('collegeId').populate('roleId');
 
     res.status(200).json({
       success: true,
@@ -177,8 +179,8 @@ exports.getCurrentUser = async (req, res, next) => {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        college: user.college,
-        role: user.role
+        college: user.collegeId ? user.collegeId.name : null,
+        role: user.roleId ? user.roleId.name : null
       }
     });
   } catch (error) {
@@ -286,9 +288,9 @@ exports.forgotPassword = async (req, res, next) => {
     // Create reset URL
     // In production, this would be your frontend URL
     const resetUrl = `https://hackcollabo.vercel.app/reset-password/${resetToken}`;
-    
+
     // For development, we'll also include a frontend URL for testing
-    const frontendResetUrl = process.env.NODE_ENV === 'production' 
+    const frontendResetUrl = process.env.NODE_ENV === 'production'
       ? resetUrl
       : `http://localhost:5173/reset-password/${resetToken}`;
 

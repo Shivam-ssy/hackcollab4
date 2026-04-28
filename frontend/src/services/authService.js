@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Base URL for auth service
 // const API_URL = 'https://hackcollab-auth-service.onrender.com/api/auth';
-const API_URL = 'http://localhost:8000/api/auth';
+const API_URL = import.meta.env.VITE_API_URL + "/api/auth"
 
 // Create axios instance with default config
 const authApi = axios.create({
@@ -33,6 +33,26 @@ const authService = {
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Registration failed');
+    }
+  },
+
+  // Register a new College Tenant
+  registerCollege: async (collegeData) => {
+    try {
+      const response = await authApi.post('/register-college', collegeData);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'College registration failed');
+    }
+  },
+
+  // Register a new Company Tenant
+  registerCompany: async (companyData) => {
+    try {
+      const response = await authApi.post('/register-company', companyData);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Company registration failed');
     }
   },
 

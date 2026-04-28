@@ -31,8 +31,8 @@ const AnnouncementsPage = () => {
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [publishedFilter, setPublishedFilter] = useState('all');
 
-  const isAdmin = user?.role === 'admin';
-  const isOrganizer = user?.role === 'organizer';
+  const isAdmin = user?.role === 'admin' || user?.role === 'SUPER_ADMIN';
+  const isOrganizer = user?.role === 'organizer' || user?.role === 'COLLEGE_ADMIN';
   const canCreateAnnouncement = isAdmin || isOrganizer;
 
   const handleTabChange = (event, newValue) => setTabValue(newValue);

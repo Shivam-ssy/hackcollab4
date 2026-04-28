@@ -18,7 +18,11 @@ import {
   EditAnnouncementPage,
   LeaderboardPage,
   SettingsPage,
-  SystemSettingsPage
+  SystemSettingsPage,
+  OrganizationRegistrationPage,
+  TeamManagement,
+  SponsorDashboard,
+  ManageSubmissionsPage
 } from './pages';
 import { ProtectedRoute } from './components/auth';
 
@@ -29,6 +33,7 @@ function App() {
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/register-organization" element={<OrganizationRegistrationPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
         
@@ -53,12 +58,19 @@ function App() {
             <Route index element={<OrganizerDashboardPage />} />
           </Route>
           
+          {/* Sponsor Dashboard */}
+          <Route path="/sponsordashboard" element={<Layout />}>
+            <Route index element={<SponsorDashboard />} />
+          </Route>
+          
           {/* Event Routes */}
           <Route path="/events/" element={<Layout />}>
             <Route index element={<EventsPage />} />
             <Route path=":eventId" element={<EventDetailPage />} />
             <Route path="create" element={<CreateEventPage />} />
             <Route path=":eventId/edit" element={<EditEventPage />} />
+            <Route path=":eventId/teams" element={<TeamManagement />} />
+            <Route path=":eventId/submissions" element={<ManageSubmissionsPage />} />
           </Route>
           
           {/* Profile Route */}

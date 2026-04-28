@@ -26,7 +26,7 @@ app.use(limiter);
 // Middleware
 app.use(helmet()); // Set security headers
 app.use(cors({
-  origin: [process.env.CLIENT_URL, 'http://localhost:5173', 'https://hackcollabo.vercel.app'],
+  origin: [process.env.CLIENT_URL, 'http://localhost:5173', 'https://hackcollabo.vercel.app', 'https://nonpersuasible-overlavishly-tarra.ngrok-free.dev'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,

@@ -36,8 +36,8 @@ const LoginForm = ({ onSuccess }) => {
       setIsLoading(true);
       setError(null);
       try {
-        await login(values.email, values.password);
-        if (onSuccess) onSuccess();
+        const user = await login(values.email, values.password);
+        if (onSuccess) onSuccess(user.role);
       } catch (err) {
         setError(err.message || 'Failed to login. Please try again.');
         console.error('Login error:', err);
@@ -59,7 +59,7 @@ const LoginForm = ({ onSuccess }) => {
         setGoogleIdToken(idToken);
         setGoogleProfile(response.googleProfile);
       } else if (response.success) {
-        if (onSuccess) onSuccess();
+        if (onSuccess) onSuccess(response.user?.role);
       }
     } catch (err) {
       setError(err.message || 'Google login failed');
@@ -78,7 +78,7 @@ const LoginForm = ({ onSuccess }) => {
         setShowCollegePrompt(false);
         setGoogleIdToken(null);
         setGoogleProfile(null);
-        if (onSuccess) onSuccess();
+        if (onSuccess) onSuccess(response.user?.role);
       }
     } catch (err) {
       setError(err.message || 'Google login failed');

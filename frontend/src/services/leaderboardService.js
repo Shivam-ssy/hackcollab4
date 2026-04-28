@@ -1,8 +1,7 @@
 import axios from 'axios';
 
 // Base URL for leaderboard service
-const API_URL = 'https://hackcollab-leaderboard-service.onrender.com/api/leaderboard';
-
+const API_URL = import.meta.env.VITE_API_URL + "/api/leaderboard"
 // Create axios instance with default config
 const leaderboardApi = axios.create({
   baseURL: API_URL,

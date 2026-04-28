@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Role = require('../models/Role');
 const College = require('../models/College');
+const Company = require('../models/Company');
 const Otp = require('../models/Otp');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -83,6 +84,13 @@ exports.login = async (req, res) => {
       if (!college.isApproved) return res.status(403).json({ message: 'College is pending approval' });
     }
 
+    // Check if company is approved (if user belongs to a company)
+    if (user.companyId) {
+      const company = await Company.findById(user.companyId);
+      if (!company) return res.status(400).json({ message: 'Company not found' });
+      if (!company.isApproved) return res.status(403).json({ message: 'Company is pending approval' });
+    }
+
     // Map permissions
     const permissions = user.roleId && user.roleId.permissions ? user.roleId.permissions.map(p => p.name) : [];
     const roleName = user.roleId ? user.roleId.name : 'USER';
@@ -92,6 +100,7 @@ exports.login = async (req, res) => {
       userId: user._id,
       role: roleName,
       collegeId: user.collegeId,
+      companyId: user.companyId,
       permissions
     };
 
@@ -201,6 +210,82 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
+exports.getCurrentUser = async (req, res) => {
+  try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const user = await User.findById(userId).populate('collegeId').populate('roleId');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        college: user.collegeId ? user.collegeId.name : null,
+        role: user.roleId ? user.roleId.name : null
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const { firstName, lastName } = req.body;
+    
+    // Find user by ID
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    // Update user fields
+    if (firstName) user.firstName = firstName;
+    if (lastName) user.lastName = lastName;
+    
+    // Save updated user
+    await user.save();
+    
+    await user.populate('collegeId');
+    await user.populate('roleId');
+    
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        college: user.collegeId ? user.collegeId.name : null,
+        role: user.roleId ? user.roleId.name : null
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 exports.seedDatabase = async (req, res) => {
   try {
     const Permission = require('../models/Permission');
@@ -259,9 +344,111 @@ exports.seedDatabase = async (req, res) => {
       await studentRole.save();
     }
 
+    // Create COMPANY_ADMIN role
+    let companyAdminRole = await Role.findOne({ name: 'COMPANY_ADMIN' });
+    if (!companyAdminRole) {
+      companyAdminRole = new Role({
+        name: 'COMPANY_ADMIN',
+        permissions: [] // can add sponsorship perms later
+      });
+      await companyAdminRole.save();
+    }
+
     // Check if test users exist, if not, optionally create them here or leave to user
 
-    res.json({ message: 'Seeding completed successfully', collegeId: college._id, roles: { superAdmin: superAdminRole._id, collegeAdmin: collegeAdminRole._id, student: studentRole._id } });
+    res.json({ message: 'Seeding completed successfully', collegeId: college._id, roles: { superAdmin: superAdminRole._id, collegeAdmin: collegeAdminRole._id, student: studentRole._id, companyAdmin: companyAdminRole._id } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.registerCollegeAdmin = async (req, res) => {
+  try {
+    const { orgName, firstName, lastName, email, password } = req.body;
+
+    // Check if user exists
+    let user = await User.findOne({ email });
+    if (user) return res.status(400).json({ message: 'User with this email already exists' });
+    
+    // Check if college exists
+    let college = await College.findOne({ email });
+    if (college) return res.status(400).json({ message: 'College with this email already exists' });
+
+    // Create the College tenant
+    college = new College({
+      name: orgName,
+      email,
+      isApproved: true, // For mock flow, auto approve. In prod: false
+      subscriptionStatus: 'ACTIVE' // Mock flow
+    });
+    await college.save();
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Get COLLEGE_ADMIN role
+    const adminRole = await Role.findOne({ name: 'COLLEGE_ADMIN' });
+
+    // Create the College Admin user
+    user = new User({
+      firstName,
+      lastName,
+      email,
+      password: hashedPassword,
+      collegeId: college._id,
+      roleId: adminRole ? adminRole._id : undefined,
+      status: 'ACTIVE',
+      isVerified: true // Auto verify for mock flow
+    });
+    await user.save();
+
+    res.status(201).json({ message: 'College and admin account registered successfully.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.registerCompanyAdmin = async (req, res) => {
+  try {
+    const { orgName, firstName, lastName, email, password, website, industry } = req.body;
+
+    // Check if user exists
+    let user = await User.findOne({ email });
+    if (user) return res.status(400).json({ message: 'User with this email already exists' });
+
+    let company = await Company.findOne({ email });
+    if (company) return res.status(400).json({ message: 'Company with this email already exists' });
+
+    company = new Company({
+      name: orgName,
+      email,
+      website,
+      industry,
+      isApproved: true // For mock flow
+    });
+    await company.save();
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const adminRole = await Role.findOne({ name: 'COMPANY_ADMIN' });
+
+    user = new User({
+      firstName,
+      lastName,
+      email,
+      password: hashedPassword,
+      companyId: company._id,
+      roleId: adminRole ? adminRole._id : undefined,
+      status: 'ACTIVE',
+      isVerified: true
+    });
+    await user.save();
+
+    res.status(201).json({ message: 'Company and admin account registered successfully.' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

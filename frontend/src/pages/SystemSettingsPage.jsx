@@ -32,7 +32,8 @@ const SystemSettingsPage = () => {
 
   // Redirect if user is not an admin
   useEffect(() => {
-    if (user && user.role !== 'admin') {
+    const isAdmin = user?.role === 'admin' || user?.role === 'SUPER_ADMIN';
+    if (user && !isAdmin) {
       navigate('/home');
     }
   }, [user, navigate]);
@@ -40,7 +41,8 @@ const SystemSettingsPage = () => {
   // Load system settings on component mount
   useEffect(() => {
     const fetchSystemSettings = async () => {
-      if (!user || user.role !== 'admin') return;
+      const isAdmin = user?.role === 'admin' || user?.role === 'SUPER_ADMIN';
+      if (!user || !isAdmin) return;
       
       try {
         setLoading(true);

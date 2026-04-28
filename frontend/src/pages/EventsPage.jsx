@@ -55,7 +55,8 @@ const EventsPage = () => {
   });
 
   // Check if user is an organizer or admin
-  const canCreateEvent = user && (user.role === 'organizer' || user.role === 'admin');
+  const isOrganizerOrAdmin = user && (user.role === 'organizer' || user.role === 'COLLEGE_ADMIN' || user.role === 'admin' || user.role === 'SUPER_ADMIN');
+  const canCreateEvent = isOrganizerOrAdmin;
 
   return (
     <div className="bg-gray-100 min-h-screen py-8">

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://hackcollab-notification-service.onrender.com/api/announcements';
+const API_URL = import.meta.env.VITE_API_URL + "/api/announcements"
 
 // Create axios instance
 const announcementAPI = axios.create({
@@ -29,12 +29,12 @@ announcementAPI.interceptors.request.use(
 const getAllAnnouncements = async (filters = {}) => {
   try {
     const params = new URLSearchParams();
-    
+
     // Add filters to query params if they exist
     if (filters.eventId) params.append('eventId', filters.eventId);
     if (filters.priority) params.append('priority', filters.priority);
     if (filters.isPublished !== undefined) params.append('isPublished', filters.isPublished);
-    
+
     const response = await announcementAPI.get('/', { params });
     return response.data;
   } catch (error) {

@@ -10,7 +10,7 @@ exports.createAnnouncement = async (req, res, next) => {
     const { title, content, eventId, priority, isPublished } = req.body;
     
     // Get user info from request (set by auth middleware)
-    const userId = req.user.id;
+    const userId = req.user.userId;
     
     // Set creator name based on available information
     let creatorName = req.body.creatorName;
@@ -70,7 +70,10 @@ exports.getAllAnnouncements = async (req, res, next) => {
     }
     
     // Only show published announcements for non-admin/organizer users
-    if (req.user && (req.user.role === 'admin' || req.user.role === 'organizer')) {
+    const isAdmin = req.user && (req.user.role === 'admin' || req.user.role === 'SUPER_ADMIN');
+    const isOrganizer = req.user && (req.user.role === 'organizer' || req.user.role === 'COLLEGE_ADMIN');
+    
+    if (isAdmin || isOrganizer) {
       // Admin and organizers can see all announcements
       if (req.query.isPublished !== undefined) {
         query.isPublished = req.query.isPublished === 'true';
@@ -110,8 +113,10 @@ exports.getAnnouncementById = async (req, res, next) => {
     }
     
     // Check if announcement is published or user is admin/organizer
-    if (!announcement.isPublished && 
-        (!req.user || (req.user.role !== 'admin' && req.user.role !== 'organizer'))) {
+    const isAdmin = req.user && (req.user.role === 'admin' || req.user.role === 'SUPER_ADMIN');
+    const isOrganizer = req.user && (req.user.role === 'organizer' || req.user.role === 'COLLEGE_ADMIN');
+    
+    if (!announcement.isPublished && !isAdmin && !isOrganizer) {
       return res.status(403).json({
         success: false,
         message: 'Not authorized to access this announcement'
@@ -144,7 +149,8 @@ exports.updateAnnouncement = async (req, res, next) => {
     }
     
     // Check if user is authorized to update this announcement
-    if (announcement.createdBy.toString() !== req.user.id && req.user.role !== 'admin') {
+    const isAdmin = req.user.role === 'admin' || req.user.role === 'SUPER_ADMIN';
+    if (announcement.createdBy.toString() !== req.user.userId && !isAdmin) {
       return res.status(403).json({
         success: false,
         message: 'Not authorized to update this announcement'
@@ -192,7 +198,8 @@ exports.deleteAnnouncement = async (req, res, next) => {
     }
     
     // Check if user is authorized to delete this announcement
-    if (announcement.createdBy.toString() !== req.user.id && req.user.role !== 'admin') {
+    const isAdmin = req.user.role === 'admin' || req.user.role === 'SUPER_ADMIN';
+    if (announcement.createdBy.toString() !== req.user.userId && !isAdmin) {
       return res.status(403).json({
         success: false,
         message: 'Not authorized to delete this announcement'
@@ -231,7 +238,10 @@ exports.getAnnouncementsByEvent = async (req, res, next) => {
     };
     
     // Admin and organizers can see unpublished announcements
-    if (req.user && (req.user.role === 'admin' || req.user.role === 'organizer')) {
+    const isAdmin = req.user && (req.user.role === 'admin' || req.user.role === 'SUPER_ADMIN');
+    const isOrganizer = req.user && (req.user.role === 'organizer' || req.user.role === 'COLLEGE_ADMIN');
+    
+    if (isAdmin || isOrganizer) {
       delete query.isPublished;
     }
     

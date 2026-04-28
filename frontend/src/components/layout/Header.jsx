@@ -3,6 +3,7 @@ import { useAuth } from "../../context";
 
 const Header = ({ toggleSidebar }) => {
   const { user, logout } = useAuth();
+  console.log(user);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -35,11 +36,11 @@ const Header = ({ toggleSidebar }) => {
           </button>
 
           <Link to="/home" className="flex items-center text-2xl font-bold">
-            <img
+            {/* <img
               src="/logo3.jpg"
               alt="HackCollab Logo"
               className="h-8 w-8 rounded-full mr-2"
-            />
+            /> */}
             <span>HackCollab</span>
           </Link>
         </div>
@@ -48,11 +49,11 @@ const Header = ({ toggleSidebar }) => {
         <div className="flex items-center space-x-4">
           {user ? (
             <div className="flex items-center space-x-4">
-              <Link to="/profile" className="flex items-center gap-2 hover:bg-white/10 px-2 py-1 rounded-md transition duration-300">
+              {/* <Link to="/profile" className="flex items-center gap-2 hover:bg-white/10 px-2 py-1 rounded-md transition duration-300">
                 {user.photo ? (
-                  <img 
-                    src={user?.photo} 
-                    alt="Profile" 
+                  <img
+                    src={user?.photo}
+                    alt="Profile"
                     className="h-8 w-8 rounded-full object-cover"
                   />
                 ) : (
@@ -63,7 +64,7 @@ const Header = ({ toggleSidebar }) => {
                 <span className="hidden md:inline font-medium">
                   {user.firstName || "User"}
                 </span>
-              </Link>
+              </Link> */}
               <button
                 onClick={handleLogout}
                 className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-md transition duration-300 border border-white/20 flex items-center gap-2"
@@ -89,7 +90,7 @@ const Header = ({ toggleSidebar }) => {
                 </svg>
               </button>
             </div>
-          ) : (
+          ) : user && (
             <>
               <Link
                 to="/login"

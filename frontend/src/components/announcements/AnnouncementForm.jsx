@@ -61,7 +61,8 @@ const AnnouncementForm = () => {
     setLoading(true);
     try {
       const response = await announcementService.getAnnouncementById(id);
-      setFormData(response.data);
+      const announcementData = response.data || response;
+      setFormData(announcementData);
     } catch (err) {
       setError(err.message || 'Failed to fetch announcement');
     } finally {
@@ -72,7 +73,9 @@ const AnnouncementForm = () => {
   const fetchEvents = async () => {
     try {
       const response = await eventService.getAllEvents();
-      setEvents(response.data);
+      // Handle both { data: [] } and direct array responses
+      const eventsData = Array.isArray(response) ? response : (response.data || []);
+      setEvents(eventsData);
     } catch (err) {
       console.error('Failed to fetch events:', err);
     }

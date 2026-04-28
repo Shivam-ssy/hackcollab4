@@ -36,12 +36,19 @@ const proxyOptions = (target) => ({
 app.use(verifyToken);
 
 // Services
-const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:5001';
-const EVENT_SERVICE_URL = process.env.EVENT_SERVICE_URL || 'http://localhost:5002';
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:8001';
+const EVENT_SERVICE_URL = process.env.EVENT_SERVICE_URL || 'http://localhost:8002';
+const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:8003';
+const LEADERBOARD_SERVICE_URL = process.env.LEADERBOARD_SERVICE_URL || 'http://localhost:8004';
+const SETTINGS_SERVICE_URL = process.env.SETTINGS_SERVICE_URL || 'http://localhost:8005';
 
 // API Routes
 app.use('/api/auth', createProxyMiddleware(proxyOptions(AUTH_SERVICE_URL)));
 app.use('/api/events', createProxyMiddleware(proxyOptions(EVENT_SERVICE_URL)));
+app.use('/api/announcements', createProxyMiddleware(proxyOptions(NOTIFICATION_SERVICE_URL)));
+app.use('/api/notifications', createProxyMiddleware(proxyOptions(NOTIFICATION_SERVICE_URL)));
+app.use('/api/leaderboard', createProxyMiddleware(proxyOptions(LEADERBOARD_SERVICE_URL)));
+app.use('/api/settings', createProxyMiddleware(proxyOptions(SETTINGS_SERVICE_URL)));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

@@ -14,16 +14,15 @@ const EventDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isRegistered, setIsRegistered] = useState(false);
+  const [participation, setParticipation] = useState(null);
   const [participants, setParticipants] = useState([]);
-  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
+  const [showPaymentGateway, setShowPaymentGateway] = useState(false);
 
   // Check if user is an organizer or admin
-  const isOrganizerOrAdmin = user && (user.role === 'organizer' || user.role === 'admin');
+  const isOrganizerOrAdmin = user && (user.role === 'organizer' || user.role === 'COLLEGE_ADMIN' || user.role === 'admin' || user.role === 'SUPER_ADMIN');
+  const isParticipant = user && (user.role === 'participant' || user.role === 'STUDENT' || !user.role);
   // Check if user is the event creator
   const isEventCreator = event && user && event.createdBy === user.id;
-  // Check if user is a participant (not admin or organizer)
-  // eslint-disable-next-line no-unused-vars
-  const isParticipant = user && user.role === 'participant';
 
   // Function to fetch event details
   const fetchEventDetails = async () => {
@@ -68,7 +67,9 @@ const EventDetailPage = () => {
                   (participantsData && participantsData.data ? participantsData.data : []);
       
       setParticipants(list);
-      setIsRegistered(list.some(p => p.userId === user.id));
+      const myParticipation = list.find(p => p.userId === user.id);
+      setIsRegistered(!!myParticipation);
+      setParticipation(myParticipation || null);
     } catch (participantError) {
       console.warn('Failed to fetch participants:', participantError);
       setParticipants([]);
@@ -104,12 +105,47 @@ const EventDetailPage = () => {
     }
     
     // Only allow participants to register
-    if (user.role === 'admin' || user.role === 'organizer') {
+    const isAdmin = user.role === 'admin' || user.role === 'SUPER_ADMIN';
+    const isOrganizer = user.role === 'organizer' || user.role === 'COLLEGE_ADMIN';
+    if (isAdmin || isOrganizer) {
       // console.log('Admins and organizers cannot register for events');
       return;
     }
     
-    setShowRegistrationForm(true);
+    try {
+      setLoading(true);
+      const res = await eventService.joinEvent(eventId);
+      
+      if (res.participation) {
+        setParticipation(res.participation);
+        setIsRegistered(true);
+        if (res.participation.paymentStatus === 'PENDING') {
+          setShowPaymentGateway(true);
+        } else {
+          await fetchParticipants();
+        }
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to join event');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMockPayment = async () => {
+    try {
+      setLoading(true);
+      // Simulate delay
+      await new Promise(r => setTimeout(r, 1000));
+      await eventService.payForEvent(participation._id, event.registrationFee);
+      setShowPaymentGateway(false);
+      await fetchParticipants();
+      alert('Payment successful! You are fully registered.');
+    } catch (err) {
+      alert('Payment failed: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancelRegistration = async () => {
@@ -284,7 +320,7 @@ const EventDetailPage = () => {
                   Date and Time
                 </dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                  {event?.date ? formatDate(event.date) : 'Date not specified'}
+                  {event?.startDate ? `${formatDate(event.startDate)} - ${formatDate(event.endDate)}` : 'Date not specified'}
                 </dd>
               </div>
               <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
@@ -302,9 +338,9 @@ const EventDetailPage = () => {
                 </dd>
               </div>
               <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">Capacity</dt>
+                <dt className="text-sm font-medium text-gray-500">Max Team Size</dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                {participants && event ? `${participants.length} / ${event.capacity || 0} registered` : 'Loading capacity information...'}
+                {event?.maxTeamSize ? `${event.maxTeamSize} members per team` : 'Not specified'}
                 </dd>
               </div>
               {/* Removing duplicate Description section */}
@@ -340,30 +376,38 @@ const EventDetailPage = () => {
                 <p>
                   {isRegistered
                     ? "You are registered for this event."
-                    : participants && event && participants.length >= (event.capacity || 0)
-                    ? "This event has reached its capacity."
                     : "Register to secure your spot for this event."}
                 </p>
               </div>
-              <div className="mt-5">
-                {isRegistered ? (
+              <div className="mt-5 flex space-x-3">
+                {isRegistered && participation?.paymentStatus === 'PAID' ? (
+                  <>
+                    <Link
+                      to={`/events/${eventId}/teams`}
+                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      Manage Team
+                    </Link>
+                    <button
+                      onClick={handleCancelRegistration}
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      Cancel Registration
+                    </button>
+                  </>
+                ) : isRegistered && participation?.paymentStatus === 'PENDING' ? (
                   <button
-                    onClick={handleCancelRegistration}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    onClick={() => setShowPaymentGateway(true)}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                   >
-                    Cancel Registration
+                    Pay Registration Fee (${event.registrationFee})
                   </button>
                 ) : (
                   <button
                     onClick={handleRegister}
-                    disabled={participants && event && participants.length >= (event.capacity || 0)}
-                    className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
-                      participants && event && participants.length >= (event.capacity || 0)
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    }`}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   >
-                    Register Now
+                    {event?.registrationFee > 0 ? `Join & Pay ($${event.registrationFee})` : 'Join Hackathon'}
                   </button>
                 )}
               </div>
@@ -371,18 +415,32 @@ const EventDetailPage = () => {
           </div>
         )}
 
-        {/* Registration form modal */}
-        {showRegistrationForm && (
-          <EventRegistrationForm
-            event={event}
-            onClose={() => setShowRegistrationForm(false)}
-            onSuccess={() => {
-              setIsRegistered(true);
-              setShowRegistrationForm(false);
-              // Fetch updated participants list after successful registration
-              fetchParticipants();
-            }}
-          />
+        {/* Payment Modal */}
+        {showPaymentGateway && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Complete Registration</h3>
+              <p className="text-gray-600 mb-4">Hackathon Fee: ${event?.registrationFee}</p>
+              <div className="bg-gray-100 p-4 rounded-md mb-6 border border-gray-200">
+                <p className="text-sm text-gray-700 mb-1 font-semibold">Payment Simulation</p>
+                <p className="text-xs text-gray-500">Click below to simulate a successful payment to your college.</p>
+              </div>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowPaymentGateway(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleMockPayment}
+                  className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md"
+                >
+                  Simulate Payment
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Participants section (visible to organizers/admins) */}

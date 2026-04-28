@@ -8,6 +8,10 @@ export { default as OrganizerDashboardPage } from './OrganizerDashboardPage';
 export { default as ProfilePage } from './ProfilePage';
 export { default as SettingsPage } from './SettingsPage';
 export { default as SystemSettingsPage } from './SystemSettingsPage';
+export { default as OrganizationRegistrationPage } from './OrganizationRegistrationPage';
+export { default as TeamManagement } from './TeamManagement';
+export { default as SponsorDashboard } from './SponsorDashboard';
+export { default as ManageSubmissionsPage } from './ManageSubmissionsPage';
 
 // Event Pages
 export { default as EventsPage } from './EventsPage';

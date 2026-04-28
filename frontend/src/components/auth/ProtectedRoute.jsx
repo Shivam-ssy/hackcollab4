@@ -24,13 +24,18 @@ const ProtectedRoute = () => {
 
   // Role-based routing
   if (user) {
+    const isAdmin = user.role === 'admin' || user.role === 'SUPER_ADMIN';
+    const isOrganizer = user.role === 'organizer' || user.role === 'COLLEGE_ADMIN';
+    const isSponsor = user.role === 'COMPANY_ADMIN';
+    const isStudent = user.role === 'STUDENT' || user.role === 'participant' || !user.role;
+
     // Allow all authenticated users to access event routes and profile page
     if (location.pathname.includes('/events') || location.pathname.includes('/profile')) {
       return <Outlet />;
     }
     
     // If user is admin and trying to access non-admin routes (except events and profile)
-    if (user.role === 'admin' && 
+    if (isAdmin && 
         !location.pathname.includes('/admindashboard') && 
         !location.pathname.includes('/events') && 
         !location.pathname.includes('/profile') &&
@@ -43,7 +48,7 @@ const ProtectedRoute = () => {
     }
     
     // If user is organizer and trying to access non-organizer routes (except events and profile)
-    if (user.role === 'organizer' && 
+    if (isOrganizer && 
         !location.pathname.includes('/organizerdashboard') && 
         !location.pathname.includes('/events') && 
         !location.pathname.includes('/profile') &&
@@ -54,10 +59,20 @@ const ProtectedRoute = () => {
       return <Navigate to="/organizerdashboard" replace />;
     }
     
-    // If user is participant and trying to access admin or organizer routes
-    if (user.role === 'participant' && 
+    // If user is sponsor and trying to access non-sponsor routes
+    if (isSponsor && 
+        !location.pathname.includes('/sponsordashboard') && 
+        !location.pathname.includes('/events') && 
+        !location.pathname.includes('/profile')
+      ) {
+      return <Navigate to="/sponsordashboard" replace />;
+    }
+    
+    // If user is student/participant and trying to access admin or organizer routes
+    if (isStudent && 
         (location.pathname.includes('/admindashboard') || 
-         location.pathname.includes('/organizerdashboard'))) {
+         location.pathname.includes('/organizerdashboard') ||
+         location.pathname.includes('/sponsordashboard'))) {
       return <Navigate to="/home" replace />;
     }
   }

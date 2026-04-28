@@ -21,16 +21,19 @@ const EditEventPage = () => {
         const eventData = await eventService.getEventById(eventId);
         
         // Check if user is authorized to edit this event
-        if (user && (user._id === eventData.createdBy || user.role === 'admin')) {
-          // Format date and time for the form
-          const eventDate = new Date(eventData.date);
-          const formattedDate = eventDate.toISOString().split('T')[0];
-          const formattedTime = eventDate.toTimeString().split(' ')[0].substring(0, 5);
+        const isAdmin = user?.role === 'admin' || user?.role === 'SUPER_ADMIN';
+        if (user && (user._id === eventData.createdBy || isAdmin)) {
+          // Format dates for datetime-local input
+          const formatForInput = (isoString) => {
+            if (!isoString) return '';
+            const date = new Date(isoString);
+            return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+          };
           
           setEvent({
             ...eventData,
-            date: formattedDate,
-            time: formattedTime
+            startDate: formatForInput(eventData.startDate),
+            endDate: formatForInput(eventData.endDate)
           });
         } else {
           setError('You do not have permission to edit this event.');
@@ -52,13 +55,9 @@ const EditEventPage = () => {
 
     try {
       // Combine date and time fields
-      const combinedData = {
-        ...eventData,
-        date: new Date(`${eventData.date}T${eventData.time}`).toISOString(),
-      };
-      
-      // Remove the separate time field
-      delete combinedData.time;
+      const combinedData = { ...eventData };
+      combinedData.startDate = new Date(eventData.startDate).toISOString();
+      combinedData.endDate = new Date(eventData.endDate).toISOString();
 
       await eventService.updateEvent(eventId, combinedData);
       navigate(`/events/${eventId}`);

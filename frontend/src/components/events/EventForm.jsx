@@ -70,20 +70,24 @@ const EventForm = ({ initialData, onSubmit, isSubmitting, submitButtonText }) =>
       newErrors.description = 'Description is required';
     }
     
-    if (!formData.date) {
-      newErrors.date = 'Date is required';
+    if (!formData.startDate) {
+      newErrors.startDate = 'Start date is required';
     }
     
-    if (!formData.time) {
-      newErrors.time = 'Time is required';
+    if (!formData.endDate) {
+      newErrors.endDate = 'End date is required';
     }
     
     if (!formData.location.trim()) {
       newErrors.location = 'Location is required';
     }
     
-    if (formData.capacity <= 0) {
-      newErrors.capacity = 'Capacity must be greater than 0';
+    if (formData.maxTeamSize <= 0) {
+      newErrors.maxTeamSize = 'Team size must be greater than 0';
+    }
+
+    if (formData.registrationFee < 0) {
+      newErrors.registrationFee = 'Registration fee cannot be negative';
     }
     
     setErrors(newErrors);
@@ -142,38 +146,38 @@ const EventForm = ({ initialData, onSubmit, isSubmitting, submitButtonText }) =>
           </p>
         </div>
 
-        {/* Date and Time */}
+        {/* Start Date and End Date */}
         <div className="sm:col-span-3">
-          <label htmlFor="date" className="block text-sm font-medium text-gray-700">
-            Date *
+          <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">
+            Start Date & Time *
           </label>
           <div className="mt-1">
             <input
-              type="date"
-              name="date"
-              id="date"
-              value={formData.date}
+              type="datetime-local"
+              name="startDate"
+              id="startDate"
+              value={formData.startDate}
               onChange={handleChange}
-              className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md px-3 py-2 ${errors.date ? 'border-red-300' : ''}`}
+              className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md px-3 py-2 ${errors.startDate ? 'border-red-300' : ''}`}
             />
-            {errors.date && <p className="mt-1 text-sm text-red-600">{errors.date}</p>}
+            {errors.startDate && <p className="mt-1 text-sm text-red-600">{errors.startDate}</p>}
           </div>
         </div>
 
         <div className="sm:col-span-3">
-          <label htmlFor="time" className="block text-sm font-medium text-gray-700">
-            Time *
+          <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">
+            End Date & Time *
           </label>
           <div className="mt-1">
             <input
-              type="time"
-              name="time"
-              id="time"
-              value={formData.time}
+              type="datetime-local"
+              name="endDate"
+              id="endDate"
+              value={formData.endDate}
               onChange={handleChange}
-              className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md px-3 py-2 ${errors.time ? 'border-red-300' : ''}`}
+              className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md px-3 py-2 ${errors.endDate ? 'border-red-300' : ''}`}
             />
-            {errors.time && <p className="mt-1 text-sm text-red-600">{errors.time}</p>}
+            {errors.endDate && <p className="mt-1 text-sm text-red-600">{errors.endDate}</p>}
           </div>
         </div>
 
@@ -196,25 +200,46 @@ const EventForm = ({ initialData, onSubmit, isSubmitting, submitButtonText }) =>
           </div>
         </div>
 
-        {/* Capacity */}
-        <div className="sm:col-span-2">
-          <label htmlFor="capacity" className="block text-sm font-medium text-gray-700">
-            Capacity *
+        {/* Max Team Size and Registration Fee */}
+        <div className="sm:col-span-3">
+          <label htmlFor="maxTeamSize" className="block text-sm font-medium text-gray-700">
+            Max Team Size *
           </label>
           <div className="mt-1">
             <input
               type="number"
-              name="capacity"
-              id="capacity"
+              name="maxTeamSize"
+              id="maxTeamSize"
               min="1"
-              value={formData.capacity}
+              value={formData.maxTeamSize}
               onChange={handleChange}
-              className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md px-3 py-2 ${errors.capacity ? 'border-red-300' : ''}`}
+              className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md px-3 py-2 ${errors.maxTeamSize ? 'border-red-300' : ''}`}
             />
-            {errors.capacity && <p className="mt-1 text-sm text-red-600">{errors.capacity}</p>}
+            {errors.maxTeamSize && <p className="mt-1 text-sm text-red-600">{errors.maxTeamSize}</p>}
           </div>
           <p className="mt-2 text-sm text-gray-500">
-            Maximum number of attendees
+            Maximum members per team
+          </p>
+        </div>
+
+        <div className="sm:col-span-3">
+          <label htmlFor="registrationFee" className="block text-sm font-medium text-gray-700">
+            Registration Fee ($) *
+          </label>
+          <div className="mt-1">
+            <input
+              type="number"
+              name="registrationFee"
+              id="registrationFee"
+              min="0"
+              value={formData.registrationFee}
+              onChange={handleChange}
+              className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md px-3 py-2 ${errors.registrationFee ? 'border-red-300' : ''}`}
+            />
+            {errors.registrationFee && <p className="mt-1 text-sm text-red-600">{errors.registrationFee}</p>}
+          </div>
+          <p className="mt-2 text-sm text-gray-500">
+            Leave 0 for free events
           </p>
         </div>
 
@@ -304,10 +329,11 @@ EventForm.propTypes = {
   initialData: PropTypes.shape({
     title: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
-    date: PropTypes.string.isRequired,
-    time: PropTypes.string.isRequired,
+    startDate: PropTypes.string.isRequired,
+    endDate: PropTypes.string.isRequired,
     location: PropTypes.string.isRequired,
-    capacity: PropTypes.number.isRequired,
+    maxTeamSize: PropTypes.number.isRequired,
+    registrationFee: PropTypes.number.isRequired,
     tags: PropTypes.arrayOf(PropTypes.string).isRequired,
     image: PropTypes.string
   }).isRequired,

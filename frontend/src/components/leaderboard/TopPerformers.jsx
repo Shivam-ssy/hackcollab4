@@ -92,7 +92,7 @@ const TopPerformers = () => {
       
       <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
         {topPerformers.map((performer, index) => (
-          <React.Fragment key={performer._id}>
+          <React.Fragment key={performer.userId}>
             {index > 0 && <Divider variant="inset" component="li" />}
             <ListItem 
               alignItems="flex-start"

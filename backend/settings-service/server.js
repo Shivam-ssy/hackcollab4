@@ -44,7 +44,7 @@ const connectDB = require('./src/config/db.config');
 connectDB();
 
 // Routes
-app.use('/api/settings', settingsRoutes);
+app.use('/', settingsRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -19,7 +19,7 @@ router.get('/event/:eventId', getAnnouncementsByEvent);
 router.use(protect);
 
 // Routes for admins and organizers only
-router.post('/', authorize('admin', 'organizer'), createAnnouncement);
+router.post('/', authorize('admin', 'organizer', 'SUPER_ADMIN', 'COLLEGE_ADMIN'), createAnnouncement);
 router.put('/:id', updateAnnouncement); // Authorization check in controller
 router.delete('/:id', deleteAnnouncement); // Authorization check in controller
 

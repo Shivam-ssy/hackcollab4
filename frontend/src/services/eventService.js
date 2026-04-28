@@ -1,9 +1,7 @@
 import axios from 'axios';
 
 // Base URL for event service
-const API_URL = 'https://hackcollab-event-service.onrender.com/api/events';
-
-// const API_URL = 'http://localhost:8002/api/events';
+const API_URL = import.meta.env.VITE_API_URL + "/api/events"
 // Create axios instance with default config
 const eventApi = axios.create({
   baseURL: API_URL,
@@ -33,6 +31,36 @@ const eventService = {
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch events');
+    }
+  },
+
+  // Get my registrations
+  getMyRegistrations: async () => {
+    try {
+      const response = await eventApi.get('/my-registrations');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch my registrations');
+    }
+  },
+
+  // Get Organizer Stats
+  getOrganizerStats: async () => {
+    try {
+      const response = await eventApi.get('/stats/organizer');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch organizer stats');
+    }
+  },
+
+  // Get Admin Stats
+  getAdminEventStats: async () => {
+    try {
+      const response = await eventApi.get('/stats/admin');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch admin stats');
     }
   },
 
@@ -89,17 +117,28 @@ const eventService = {
     }
   },
 
-  // Register for event
-  registerForEvent: async (eventId, registrationData) => {
+  // Join event
+  joinEvent: async (eventId) => {
     if (!eventId || eventId === 'undefined' || eventId === 'null') {
-      throw new Error('Invalid event ID for registration');
+      throw new Error('Invalid event ID for joining');
     }
 
     try {
-      const response = await eventApi.post(`/${eventId}/register`, registrationData);
-      return response.data.data;
+      const response = await eventApi.post(`/${eventId}/join`);
+      return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Failed to register for event');
+      throw new Error(error.response?.data?.message || 'Failed to join event');
+    }
+  },
+
+  // Pay for event registration
+  payForEvent: async (participationId, amount) => {
+    if (!participationId) throw new Error('Invalid participation ID');
+    try {
+      const response = await eventApi.post(`/participation/${participationId}/pay`, { amount });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Payment failed');
     }
   },
 
@@ -128,6 +167,71 @@ const eventService = {
       return response.data.data || []; // Extract the data from the nested structure
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch participants');
+    }
+  },
+
+  // Team Management
+  createTeam: async (teamData) => {
+    try {
+      const response = await eventApi.post('/teams', teamData);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to create team');
+    }
+  },
+
+  getTeamsForEvent: async (eventId) => {
+    try {
+      const response = await eventApi.get(`/${eventId}/teams`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch teams');
+    }
+  },
+
+  requestJoinTeam: async (teamId) => {
+    try {
+      const response = await eventApi.post(`/teams/${teamId}/request`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to request join');
+    }
+  },
+
+  approveJoinRequest: async (teamId, targetUserId) => {
+    try {
+      const response = await eventApi.post(`/teams/${teamId}/approve/${targetUserId}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to approve request');
+    }
+  },
+
+  // Submissions
+  submitProject: async (submissionData) => {
+    try {
+      const response = await eventApi.post('/submissions', submissionData);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to submit project');
+    }
+  },
+
+  getEventSubmissions: async (eventId) => {
+    try {
+      const response = await eventApi.get(`/${eventId}/submissions`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch submissions');
+    }
+  },
+
+  scoreSubmission: async (eventId, submissionId, scoreData) => {
+    try {
+      const response = await eventApi.post(`/${eventId}/submissions/${submissionId}/score`, scoreData);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to score submission');
     }
   }
 };

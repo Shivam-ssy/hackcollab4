@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Base URL for settings service through the API gateway
-const API_URL = 'https://hackcollab-settings-service.onrender.com/api/settings';
+const API_URL = import.meta.env.VITE_API_URL + "/api/settings"
 
 // Create axios instance with default config
 const settingsApi = axios.create({
