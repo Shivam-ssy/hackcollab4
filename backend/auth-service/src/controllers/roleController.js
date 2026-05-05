@@ -17,6 +17,15 @@ exports.createPermission = async (req, res) => {
   }
 };
 
+exports.getPermissions = async (req, res) => {
+  try {
+    const permissions = await Permission.find();
+    res.json(permissions);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 exports.createRole = async (req, res) => {
   try {
     const { name, permissionIds, collegeId } = req.body;

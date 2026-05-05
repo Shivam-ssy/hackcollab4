@@ -446,7 +446,7 @@ const RegisterForm = ({ onSuccess }) => {
             </button>
           </form>
 
-          <div className="flex justify-center mt-6">
+          {/* <div className="flex justify-center mt-6">
             <GoogleOAuthProvider clientId={clientId}>
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
@@ -454,7 +454,7 @@ const RegisterForm = ({ onSuccess }) => {
                 useOneTap // Optional
               />
             </GoogleOAuthProvider>
-          </div>
+          </div> */}
 
           {showCollegePrompt && (
             <form onSubmit={handleCollegeSubmit} className="mt-4">

@@ -23,7 +23,8 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.1",
-    "nodemailer": "^7.0.3"
+    "nodemailer": "^7.0.3",
+    "razorpay": "^2.9.6"
   },
   "devDependencies": {
     "jest": "^29.7.0",

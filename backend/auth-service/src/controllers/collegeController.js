@@ -62,6 +62,22 @@ exports.updateSubscription = async (req, res) => {
   }
 };
 
+exports.getMyCollege = async (req, res) => {
+  try {
+    const { collegeId } = req.user;
+    if (!collegeId) {
+      return res.status(400).json({ message: 'User is not associated with a college' });
+    }
+    const college = await College.findById(collegeId);
+    if (!college) {
+      return res.status(404).json({ message: 'College not found' });
+    }
+    res.json(college);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 exports.getColleges = async (req, res) => {
   try {
     const colleges = await College.find();

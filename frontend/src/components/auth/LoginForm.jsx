@@ -139,11 +139,10 @@ const LoginForm = ({ onSuccess }) => {
                 type="email"
                 name="email"
                 placeholder="Enter your email"
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                  formik.touched.email && formik.errors.email
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${formik.touched.email && formik.errors.email
                     ? "border-red-500 focus:ring-red-200"
                     : "border-gray-300 focus:ring-blue-200"
-                }`}
+                  }`}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 value={formik.values.email}
@@ -168,11 +167,10 @@ const LoginForm = ({ onSuccess }) => {
                 type="password"
                 name="password"
                 placeholder="Enter your password"
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                  formik.touched.password && formik.errors.password
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${formik.touched.password && formik.errors.password
                     ? "border-red-500 focus:ring-red-200"
                     : "border-gray-300 focus:ring-blue-200"
-                }`}
+                  }`}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 value={formik.values.password}
@@ -245,7 +243,7 @@ const LoginForm = ({ onSuccess }) => {
             </button>
           </form>
 
-          <div className="flex justify-center mt-6">
+          {/* <div className="flex justify-center mt-6">
             <GoogleOAuthProvider clientId={clientId}>
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
@@ -253,7 +251,7 @@ const LoginForm = ({ onSuccess }) => {
                
               />
             </GoogleOAuthProvider>
-          </div>
+          </div> */}
 
           <div className="mt-6 text-center">
             <p className="text-sm text-black">

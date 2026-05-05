@@ -10,7 +10,7 @@ const router = express.Router();
 
 // All routes are protected and require admin role
 router.use(protect);
-router.use(authorize('admin'));
+router.use(authorize('SUPER_ADMIN'));
 
 // User management routes
 router.get('/users', getAllUsers);

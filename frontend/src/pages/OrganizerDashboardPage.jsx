@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context';
-import { eventService } from '../services';
+import { eventService, collegeService, paymentService } from '../services';
 
 const OrganizerDashboardPage = () => {
   const { user } = useAuth();
@@ -16,6 +16,8 @@ const OrganizerDashboardPage = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [myCollege, setMyCollege] = useState(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   // Redirect if user is not an organizer
   useEffect(() => {
@@ -32,6 +34,17 @@ const OrganizerDashboardPage = () => {
       
       try {
         setLoading(true);
+        
+        // Fetch college info if user is a college admin
+        if (user?.role === 'COLLEGE_ADMIN') {
+          try {
+            const collegeData = await collegeService.getMyCollege();
+            setMyCollege(collegeData);
+          } catch (err) {
+            console.error('Failed to fetch college:', err);
+          }
+        }
+
         // Get all events and filter by the current organizer
         const allEvents = await eventService.getAllEvents();
         const organizerEvents = allEvents.data ? allEvents.data.filter(event => 
@@ -63,6 +76,57 @@ const OrganizerDashboardPage = () => {
     fetchEvents();
   }, [user]);
 
+  const handlePayment = async () => {
+    try {
+      setPaymentLoading(true);
+      const orderData = await paymentService.createOrder();
+      
+      const options = {
+        key: orderData.key,
+        amount: orderData.order.amount,
+        currency: orderData.order.currency,
+        name: 'HackCollab',
+        description: 'College Subscription Payment',
+        order_id: orderData.order.id,
+        handler: async function (response) {
+          try {
+            await paymentService.verifyPayment({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature
+            });
+            // Update local state to hide banner
+            setMyCollege({ ...myCollege, paymentStatus: 'COMPLETED' });
+            alert('Payment successful!');
+          } catch (verifyErr) {
+            console.error('Payment verification failed:', verifyErr);
+            alert('Payment verification failed. Please contact support.');
+          }
+        },
+        prefill: {
+          name: user?.firstName + ' ' + user?.lastName,
+          email: user?.email,
+        },
+        theme: {
+          color: '#059669' // green-600
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response){
+        console.error('Payment failed', response.error);
+        alert('Payment failed: ' + response.error.description);
+      });
+      rzp.open();
+
+    } catch (err) {
+      console.error('Payment initiation failed:', err);
+      alert('Failed to initiate payment. Please try again.');
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
   return (
     <div className="pb-12">
       <div className="bg-white rounded-xl shadow-md overflow-hidden mb-8">
@@ -72,6 +136,24 @@ const OrganizerDashboardPage = () => {
         <div className="p-6">
           <p className="text-lg text-gray-700 mb-6">Welcome to the organizer dashboard, {user?.firstName || 'Organizer'}!</p>
           
+          {myCollege && (myCollege.paymentStatus === 'PENDING' || myCollege.paymentStatus === 'FAILED') && (
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8 rounded-md shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-medium text-yellow-800">Subscription Payment Required</h3>
+                  <p className="text-yellow-700 mt-1">Your college subscription payment is pending. You need to complete the payment of ₹499 to activate your account fully.</p>
+                </div>
+                <button
+                  onClick={handlePayment}
+                  disabled={paymentLoading}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-6 rounded shadow transition-colors"
+                >
+                  {paymentLoading ? 'Processing...' : 'Pay ₹499'}
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Create Event Card */}
             <div className="bg-white rounded-lg shadow p-6 border border-gray-200 hover:shadow-lg transition-shadow">

@@ -43,7 +43,14 @@ const LEADERBOARD_SERVICE_URL = process.env.LEADERBOARD_SERVICE_URL || 'http://l
 const SETTINGS_SERVICE_URL = process.env.SETTINGS_SERVICE_URL || 'http://localhost:8005';
 
 // API Routes
-app.use('/api/auth', createProxyMiddleware(proxyOptions(AUTH_SERVICE_URL)));
+const authProxy = createProxyMiddleware(proxyOptions(AUTH_SERVICE_URL));
+app.use((req, res, next) => {
+  if (['/api/auth', '/api/admin', '/api/colleges', '/api/roles', '/api/payments'].some(p => req.path.startsWith(p))) {
+    req.url = req.originalUrl;
+    return authProxy(req, res, next);
+  }
+  next();
+});
 app.use('/api/events', createProxyMiddleware(proxyOptions(EVENT_SERVICE_URL)));
 app.use('/api/announcements', createProxyMiddleware(proxyOptions(NOTIFICATION_SERVICE_URL)));
 app.use('/api/notifications', createProxyMiddleware(proxyOptions(NOTIFICATION_SERVICE_URL)));

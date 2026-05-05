@@ -19,10 +19,14 @@ app.use(express.json());
 const authRoutes = require('./src/routes/authRoutes');
 const roleRoutes = require('./src/routes/roleRoutes');
 const collegeRoutes = require('./src/routes/collegeRoutes');
+const adminRoutes = require('./src/routes/admin.routes');
+const paymentRoutes = require('./src/routes/paymentRoutes');
 
-app.use('/colleges', collegeRoutes);
-app.use('/roles', roleRoutes);
-app.use('/', authRoutes);
+app.use('/api/colleges', collegeRoutes);
+app.use('/api/roles', roleRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/auth', authRoutes);
 
 const PORT = process.env.PORT || 5001;
 

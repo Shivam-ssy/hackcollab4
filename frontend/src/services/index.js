@@ -4,3 +4,6 @@ export { default as adminService } from './adminService';
 export { default as announcementService } from './announcementService';
 export { default as leaderboardService } from './leaderboardService';
 export { default as settingsService } from './settingsService';
+export { default as collegeService } from './collegeService';
+export { default as roleService } from './roleService';
+export { default as paymentService } from './paymentService';

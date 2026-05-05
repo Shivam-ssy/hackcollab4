@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { adminService } from '../../services';
+import { adminService, roleService } from '../../services';
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -11,24 +11,29 @@ const UserManagement = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [roleUpdateLoading, setRoleUpdateLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [availableRoles, setAvailableRoles] = useState([]);
 
   // Fetch all users on component mount
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await adminService.getAllUsers();
-        setUsers(response.data);
-        setFilteredUsers(response.data);
+        const [usersResponse, rolesData] = await Promise.all([
+          adminService.getAllUsers(),
+          roleService.getRoles()
+        ]);
+        setUsers(usersResponse.data);
+        setFilteredUsers(usersResponse.data);
+        setAvailableRoles(rolesData);
         setError(null);
       } catch (err) {
-        setError(err.message || 'Failed to fetch users');
+        setError(err.message || 'Failed to fetch data');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUsers();
+    fetchData();
   }, []);
   
   // Filter users based on search term
@@ -56,11 +61,13 @@ const UserManagement = () => {
       await adminService.updateUserRole(userId, newRole);
       
       // Update the user in the local state
+      const updatedRoleObj = availableRoles.find(r => r._id === newRole);
+      
       setUsers(users.map(user => 
-        user._id === userId ? { ...user, role: newRole } : user
+        user._id === userId ? { ...user, roleId: updatedRoleObj, role: updatedRoleObj ? updatedRoleObj.name : user.role } : user
       ));
       
-      setSuccessMessage(`User role updated successfully to ${newRole}`);
+      setSuccessMessage(`User role updated successfully`);
       
       // Clear success message after 3 seconds
       setTimeout(() => {
@@ -140,25 +147,22 @@ const UserManagement = () => {
                   <td className="py-3 px-6 text-left">{user.email}</td>
                   <td className="py-3 px-6 text-left">{user.college}</td>
                   <td className="py-3 px-6 text-left">
-                    <span className={`py-1 px-3 rounded-full text-xs ${
-                      user.role === 'admin' ? 'bg-purple-200 text-purple-800' :
-                      user.role === 'organizer' ? 'bg-blue-200 text-blue-800' :
-                      'bg-green-200 text-green-800'
-                    }`}>
-                      {user.role}
+                    <span className={`py-1 px-3 rounded-full text-xs bg-gray-200 text-gray-800`}>
+                      {user.roleId?.name || user.role}
                     </span>
                   </td>
                   <td className="py-3 px-6 text-center">
                     <div className="flex justify-center items-center space-x-2">
                       <select 
                         className="border rounded px-2 py-1 text-sm"
-                        value={user.role}
+                        value={user.roleId?._id || ''}
                         onChange={(e) => handleRoleChange(user._id, e.target.value)}
                         disabled={roleUpdateLoading}
                       >
-                        <option value="participant">Participant</option>
-                        <option value="organizer">Organizer</option>
-                        <option value="admin">Admin</option>
+                        <option value="">Select Role</option>
+                        {availableRoles.map(role => (
+                          <option key={role._id} value={role._id}>{role.name}</option>
+                        ))}
                       </select>
                     </div>
                   </td>
