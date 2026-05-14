@@ -70,3 +70,38 @@ exports.getRoles = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+exports.updateRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, permissionIds } = req.body;
+    
+    const role = await Role.findById(id);
+    if (!role) return res.status(404).json({ message: 'Role not found' });
+    
+    if (name) role.name = name;
+    if (permissionIds) role.permissions = permissionIds;
+    
+    await role.save();
+    
+    const updatedRole = await Role.findById(id).populate('permissions');
+    res.json(updatedRole);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.deleteRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const role = await Role.findById(id);
+    if (!role) return res.status(404).json({ message: 'Role not found' });
+    
+    await Role.findByIdAndDelete(id);
+    
+    res.json({ message: 'Role deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+

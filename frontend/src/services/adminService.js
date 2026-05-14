@@ -29,6 +29,8 @@ const adminService = {
   getAllUsers: async () => {
     try {
       const response = await adminApi.get('/users');
+      console.log("this is user data ", response.data);
+
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch users');
@@ -52,6 +54,26 @@ const adminService = {
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch user details');
+    }
+  },
+
+  // Block user
+  blockUser: async (userId) => {
+    try {
+      const response = await adminApi.put(`/users/${userId}/block`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to block user');
+    }
+  },
+
+  // Unblock user
+  unblockUser: async (userId) => {
+    try {
+      const response = await adminApi.put(`/users/${userId}/unblock`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to unblock user');
     }
   }
 };

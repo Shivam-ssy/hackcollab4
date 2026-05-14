@@ -79,7 +79,7 @@ const authService = {
   // Get available colleges
   getColleges: async () => {
     try {
-      const response = await authApi.get('/colleges');
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/colleges`);
       console.log(response.data);
       return response.data;
     } catch (error) {

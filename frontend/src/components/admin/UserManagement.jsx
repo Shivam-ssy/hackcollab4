@@ -35,22 +35,22 @@ const UserManagement = () => {
 
     fetchData();
   }, []);
-  
+
   // Filter users based on search term
   useEffect(() => {
     if (!searchTerm.trim()) {
       setFilteredUsers(users);
       return;
     }
-    
+
     const lowercasedSearch = searchTerm.toLowerCase();
     const filtered = users.filter(user => {
       const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
       const email = user.email.toLowerCase();
-      
+
       return fullName.includes(lowercasedSearch) || email.includes(lowercasedSearch);
     });
-    
+
     setFilteredUsers(filtered);
   }, [searchTerm, users]);
 
@@ -59,16 +59,16 @@ const UserManagement = () => {
     try {
       setRoleUpdateLoading(true);
       await adminService.updateUserRole(userId, newRole);
-      
+
       // Update the user in the local state
       const updatedRoleObj = availableRoles.find(r => r._id === newRole);
-      
-      setUsers(users.map(user => 
+
+      setUsers(users.map(user =>
         user._id === userId ? { ...user, roleId: updatedRoleObj, role: updatedRoleObj ? updatedRoleObj.name : user.role } : user
       ));
-      
+
       setSuccessMessage(`User role updated successfully`);
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => {
         setSuccessMessage('');
@@ -80,42 +80,69 @@ const UserManagement = () => {
     }
   };
 
+  // Handle block/unblock
+  const handleBlockToggle = async (userId, currentStatus) => {
+    try {
+      setRoleUpdateLoading(true);
+      if (currentStatus === 'BLOCKED') {
+        await adminService.unblockUser(userId);
+        setSuccessMessage('User unblocked successfully');
+      } else {
+        await adminService.blockUser(userId);
+        setSuccessMessage('User blocked successfully');
+      }
+
+      // Update the user in the local state
+      setUsers(users.map(user => 
+        user._id === userId ? { ...user, status: currentStatus === 'BLOCKED' ? 'ACTIVE' : 'BLOCKED' } : user
+      ));
+
+      setTimeout(() => {
+        setSuccessMessage('');
+      }, 3000);
+    } catch (err) {
+      setError(err.message || 'Failed to update user status');
+    } finally {
+      setRoleUpdateLoading(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">User Management</h2>
-      
+
       {/* Search input */}
       <div className="mb-6">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
             <svg className="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-              <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
+              <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
             </svg>
           </div>
-          <input 
-            type="text" 
-            className="block w-full p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500" 
+          <input
+            type="text"
+            className="block w-full p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
             placeholder="Search by name or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
       </div>
-      
+
       {/* Success message */}
       {successMessage && (
         <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">
           {successMessage}
         </div>
       )}
-      
+
       {/* Error message */}
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
           {error}
         </div>
       )}
-      
+
       {/* Loading indicator */}
       {loading ? (
         <div className="flex justify-center items-center py-8">
@@ -135,42 +162,44 @@ const UserManagement = () => {
                   <th className="py-3 px-6 text-left">Email</th>
                   <th className="py-3 px-6 text-left">College</th>
                   <th className="py-3 px-6 text-left">Current Role</th>
+                  <th className="py-3 px-6 text-center">Status</th>
                   <th className="py-3 px-6 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="text-gray-600 text-sm">
                 {filteredUsers.map(user => (
-                <tr key={user._id} className="border-b border-gray-200 hover:bg-gray-50">
-                  <td className="py-3 px-6 text-left">
-                    {user.firstName} {user.lastName}
-                  </td>
-                  <td className="py-3 px-6 text-left">{user.email}</td>
-                  <td className="py-3 px-6 text-left">{user.college}</td>
-                  <td className="py-3 px-6 text-left">
-                    <span className={`py-1 px-3 rounded-full text-xs bg-gray-200 text-gray-800`}>
-                      {user.roleId?.name || user.role}
-                    </span>
-                  </td>
-                  <td className="py-3 px-6 text-center">
-                    <div className="flex justify-center items-center space-x-2">
-                      <select 
-                        className="border rounded px-2 py-1 text-sm"
-                        value={user.roleId?._id || ''}
-                        onChange={(e) => handleRoleChange(user._id, e.target.value)}
-                        disabled={roleUpdateLoading}
-                      >
-                        <option value="">Select Role</option>
-                        {availableRoles.map(role => (
-                          <option key={role._id} value={role._id}>{role.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+                  <tr key={user._id} className="border-b border-gray-200 hover:bg-gray-50">
+                    <td className="py-3 px-6 text-left">
+                      {user.firstName} {user.lastName}
+                    </td>
+                    <td className="py-3 px-6 text-left">{user.email}</td>
+                    <td className="py-3 px-6 text-left">{user.collegeId?.name || 'N/A'}</td>
+                    <td className="py-3 px-6 text-left">
+                      <span className={`py-1 px-3 rounded-full text-xs bg-gray-200 text-gray-800`}>
+                        {user.roleId?.name || user.role}
+                      </span>
+                    </td>
+                    <td className="py-3 px-6 text-center">
+                      <span className={`py-1 px-3 rounded-full text-xs ${user.status === 'BLOCKED' ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}`}>
+                        {user.status || 'ACTIVE'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-6 text-center">
+                      <div className="flex justify-center items-center space-x-2">
+                        <button
+                          onClick={() => handleBlockToggle(user._id, user.status)}
+                          disabled={roleUpdateLoading}
+                          className={`px-3 py-1 rounded text-sm text-white ${user.status === 'BLOCKED' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'} disabled:opacity-50`}
+                        >
+                          {user.status === 'BLOCKED' ? 'Unblock' : 'Block'}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
     </div>

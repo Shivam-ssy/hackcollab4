@@ -25,13 +25,36 @@ app.use(limiter);
 
 // Middleware
 app.use(helmet()); // Set security headers
+// Define your allowed origins
+const allowedOrigins = [
+  'http://localhost:3000', // Your local frontend port
+  'http://localhost:5173', // Vite default (if you use it)
+  'https://nonpersuasible-overlavishly-tarra.ngrok-free.dev' // Your ngrok tunnel
+];
+
 app.use(cors({
-  origin: [process.env.CLIENT_URL, 'http://localhost:5173', 'https://hackcollabo.vercel.app', 'https://nonpersuasible-overlavishly-tarra.ngrok-free.dev'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl) 
+    // or if the origin is in our allowed list
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Private-Network'],
   credentials: true,
   optionsSuccessStatus: 200
-})); // Enable CORS for all routes
+}));
+
+// This header MUST be present for ngrok -> localhost communication
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    res.header('Access-Control-Allow-Private-Network', 'true');
+  }
+  next();
+}); // Enable CORS for all routes
 app.use(express.json()); // Parse JSON request body
 
 // Service endpoints

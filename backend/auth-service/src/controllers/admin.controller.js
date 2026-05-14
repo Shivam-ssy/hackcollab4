@@ -16,7 +16,7 @@ exports.getAllUsers = async (req, res, next) => {
     }
 
     // Get all users matching the query, excluding password field
-    const users = await User.find(query).select('-password').populate('roleId');
+    const users = await User.find(query).select('-password').populate('roleId').populate("collegeId", "name");
 
     res.status(200).json({
       success: true,
@@ -97,6 +97,84 @@ exports.updateUserRole = async (req, res, next) => {
       message: 'User role updated successfully',
       data: user
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.blockUser = async (req, res, next) => {
+  try {
+    const { id: userId } = req.params;
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    if (user.status === "BLOCKED") {
+      return res.status(400).json({
+        success: false,
+        message: "User already blocked"
+      });
+    }
+
+    user.status = "BLOCKED";
+    await user.save();
+
+    const updatedUser = await User.findById(userId)
+      .select("-password")
+      .populate("roleId")
+      .populate("collegeId", "name");
+
+    return res.status(200).json({
+      success: true,
+      message: "User blocked successfully",
+      data: updatedUser
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.unblockUser = async (req, res, next) => {
+  try {
+    const { id: userId } = req.params;
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    if (user.status === "ACTIVE") {
+      return res.status(400).json({
+        success: false,
+        message: "User is already active"
+      });
+    }
+
+    user.status = "ACTIVE";
+    await user.save();
+
+    const updatedUser = await User.findById(userId)
+      .select("-password")
+      .populate("roleId")
+      .populate("collegeId", "name");
+
+    return res.status(200).json({
+      success: true,
+      message: "User unblocked successfully",
+      data: updatedUser
+    });
+
   } catch (error) {
     next(error);
   }

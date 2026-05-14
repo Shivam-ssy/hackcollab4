@@ -46,6 +46,24 @@ const roleService = {
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to create role');
     }
+  },
+
+  updateRole: async (roleId, roleData) => {
+    try {
+      const response = await roleApi.put(`/${roleId}`, roleData);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to update role');
+    }
+  },
+
+  deleteRole: async (roleId) => {
+    try {
+      const response = await roleApi.delete(`/${roleId}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to delete role');
+    }
   }
 };
 

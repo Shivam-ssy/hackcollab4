@@ -8,4 +8,13 @@ export default defineConfig({
   build: {
     // Remove the externalization of @mui/icons-material to fix loading issues
   },
+  server: {
+    host: true,
+    allowedHosts: true
+  },
+
+  // preview: {
+  //   host: true,
+  //   allowedHosts: true
+  // }
 })
