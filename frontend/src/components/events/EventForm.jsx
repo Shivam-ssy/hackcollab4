@@ -7,13 +7,18 @@ const EventForm = ({ initialData, onSubmit, isSubmitting, submitButtonText }) =>
   const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
-    const { name, value, type } = e.target;
+    const { name, value, type, checked } = e.target;
     
     // Handle number inputs
     if (type === 'number') {
       setFormData({
         ...formData,
         [name]: parseInt(value, 10) || 0
+      });
+    } else if (type === 'checkbox') {
+      setFormData({
+        ...formData,
+        [name]: checked
       });
     } else {
       setFormData({
@@ -308,6 +313,24 @@ const EventForm = ({ initialData, onSubmit, isSubmitting, submitButtonText }) =>
             Provide a URL to an image for your event
           </p>
         </div>
+
+        {/* Is Public Toggle */}
+        <div className="sm:col-span-6 flex items-start">
+          <div className="flex items-center h-5">
+            <input
+              id="isPublic"
+              name="isPublic"
+              type="checkbox"
+              checked={formData.isPublic || false}
+              onChange={handleChange}
+              className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
+            />
+          </div>
+          <div className="ml-3 text-sm">
+            <label htmlFor="isPublic" className="font-medium text-gray-700">Make Event Public</label>
+            <p className="text-gray-500">If checked, this event will be visible to students from other colleges.</p>
+          </div>
+        </div>
       </div>
 
       <div className="pt-5">
@@ -335,7 +358,8 @@ EventForm.propTypes = {
     maxTeamSize: PropTypes.number.isRequired,
     registrationFee: PropTypes.number.isRequired,
     tags: PropTypes.arrayOf(PropTypes.string).isRequired,
-    image: PropTypes.string
+    image: PropTypes.string,
+    isPublic: PropTypes.bool
   }).isRequired,
   onSubmit: PropTypes.func.isRequired,
   isSubmitting: PropTypes.bool,

@@ -207,6 +207,15 @@ const eventService = {
     }
   },
 
+  addMemberToTeam: async (teamId, targetEmail) => {
+    try {
+      const response = await eventApi.post(`/teams/${teamId}/addMember`, { email: targetEmail });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to add member to team');
+    }
+  },
+
   // Submissions
   submitProject: async (submissionData) => {
     try {
@@ -232,6 +241,34 @@ const eventService = {
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to score submission');
+    }
+  },
+
+  sponsorEvent: async (eventId, amount) => {
+    try {
+      const response = await eventApi.post(`/${eventId}/sponsor`, { amount });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to sponsor event');
+    }
+  },
+
+  // Judge Management
+  assignJudgeToEvent: async (eventId, judgeEmail) => {
+    try {
+      const response = await eventApi.post(`/${eventId}/judges`, { judgeEmail });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to assign judge');
+    }
+  },
+
+  getAssignedEvents: async () => {
+    try {
+      const response = await eventApi.get('/judges/assigned-events');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch assigned events');
     }
   }
 };

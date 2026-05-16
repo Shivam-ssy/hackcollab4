@@ -179,3 +179,40 @@ exports.unblockUser = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.getPendingCompanies = async (req, res, next) => {
+  try {
+    const Company = require('../models/Company');
+    const companies = await Company.find({ isApproved: false });
+    
+    res.status(200).json({
+      success: true,
+      data: companies
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.approveCompany = async (req, res, next) => {
+  try {
+    const Company = require('../models/Company');
+    const { id } = req.params;
+    
+    const company = await Company.findById(id);
+    if (!company) {
+      return res.status(404).json({ success: false, message: 'Company not found' });
+    }
+    
+    company.isApproved = true;
+    await company.save();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Company approved successfully',
+      data: company
+    });
+  } catch (error) {
+    next(error);
+  }
+};

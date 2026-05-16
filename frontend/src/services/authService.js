@@ -171,6 +171,35 @@ const authService = {
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Google login failed');
     }
+  },
+
+  getTalentPool: async () => {
+    try {
+      const response = await authApi.get('/talent');
+      return response.data.data || [];
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch talent pool');
+    }
+  },
+
+  // Create a Judge (COLLEGE_ADMIN only)
+  createJudge: async (judgeData) => {
+    try {
+      const response = await authApi.post('/create-judge', judgeData);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to create judge');
+    }
+  },
+
+  // Get College Judges (COLLEGE_ADMIN only)
+  getCollegeJudges: async () => {
+    try {
+      const response = await authApi.get('/college-judges');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch judges');
+    }
   }
 };
 

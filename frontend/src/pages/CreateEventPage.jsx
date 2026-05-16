@@ -24,7 +24,8 @@ const CreateEventPage = () => {
     maxTeamSize: 4,
     registrationFee: 0,
     tags: [],
-    image: ''
+    image: '',
+    isPublic: false
   };
 
   const handleSubmit = async (eventData) => {
@@ -51,7 +52,8 @@ const CreateEventPage = () => {
       const createdEvent = await eventService.createEvent(combinedData);
       
       // Extract the event ID from the response, handling different response structures
-      const eventId = createdEvent.data?._id || createdEvent._id;
+      // createdEvent might be the event object itself or { message, data: event } or { message, event }
+      const eventId = createdEvent._id || createdEvent.data?._id || createdEvent.event?._id;
       
       if (!eventId) {
         throw new Error('Failed to get event ID from server response');

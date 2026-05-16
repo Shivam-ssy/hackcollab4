@@ -6,11 +6,15 @@ exports.createEvent = async (req, res) => {
     if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
 
     // Check permission logic
+    if (req.user.role === 'SUPER_ADMIN') {
+      return res.status(403).json({ message: 'Admins can only view events and analytics, not organize them' });
+    }
+
     if (!req.user.permissions.includes('CREATE_EVENT')) {
       return res.status(403).json({ message: 'Forbidden: Insufficient permissions' });
     }
 
-    const { title, description, startDate, endDate, registrationFee, maxTeamSize, location, image, tags } = req.body;
+    const { title, description, startDate, endDate, registrationFee, maxTeamSize, location, image, tags, isPublic } = req.body;
     
     // We enforce that the event belongs to the same college as the creator
     if (!req.user.collegeId) {
@@ -27,12 +31,13 @@ exports.createEvent = async (req, res) => {
       location,
       image: image || '',
       tags: tags || [],
+      isPublic: isPublic || false,
       collegeId: req.user.collegeId,
       createdBy: req.user.userId
     });
 
     await event.save();
-    res.status(201).json({ message: 'Event created', event });
+    res.status(201).json({ message: 'Event created', data: event });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -52,7 +57,10 @@ exports.getEvents = async (req, res) => {
       if (!req.user.collegeId) {
         return res.status(403).json({ message: 'Access denied. College context required.' });
       }
-      query.collegeId = req.user.collegeId;
+      query.$or = [
+        { collegeId: req.user.collegeId },
+        { isPublic: true }
+      ];
     }
     // SUPER_ADMIN and COMPANY_ADMIN can see all events (or we could filter public ones)
     
@@ -153,6 +161,14 @@ exports.getEventById = async (req, res) => {
   try {
     const event = await Event.findById(req.params.eventId);
     if (!event) return res.status(404).json({ message: 'Event not found' });
+
+    // Enforce multi-tenancy for viewing events
+    if (['COLLEGE_ADMIN', 'organizer', 'STUDENT'].includes(req.user.role)) {
+      if (!event.isPublic && event.collegeId && req.user.collegeId && event.collegeId.toString() !== req.user.collegeId) {
+        return res.status(403).json({ message: 'Access denied. You can only view events for your college.' });
+      }
+    }
+
     res.json({ data: event });
   } catch (err) {
     console.error(err);
@@ -165,7 +181,11 @@ exports.updateEvent = async (req, res) => {
     const event = await Event.findById(req.params.eventId);
     if (!event) return res.status(404).json({ message: 'Event not found' });
     
-    if (event.createdBy.toString() !== req.user.userId && !req.user.permissions.includes('MANAGE_PLATFORM')) {
+    if (req.user.role === 'SUPER_ADMIN') {
+      return res.status(403).json({ message: 'Admins can only view events and analytics, not organize or update them' });
+    }
+
+    if (event.createdBy.toString() !== req.user.userId && !(req.user.role === 'COLLEGE_ADMIN' && event.collegeId && event.collegeId.toString() === req.user.collegeId)) {
       return res.status(403).json({ message: 'Not authorized to update this event' });
     }
 
@@ -182,7 +202,11 @@ exports.deleteEvent = async (req, res) => {
     const event = await Event.findById(req.params.eventId);
     if (!event) return res.status(404).json({ message: 'Event not found' });
     
-    if (event.createdBy.toString() !== req.user.userId && !req.user.permissions.includes('MANAGE_PLATFORM')) {
+    if (req.user.role === 'SUPER_ADMIN') {
+      return res.status(403).json({ message: 'Admins can only view events and analytics, not delete them' });
+    }
+
+    if (event.createdBy.toString() !== req.user.userId && !(req.user.role === 'COLLEGE_ADMIN' && event.collegeId && event.collegeId.toString() === req.user.collegeId)) {
       return res.status(403).json({ message: 'Not authorized to delete this event' });
     }
 

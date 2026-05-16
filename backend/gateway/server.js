@@ -9,7 +9,37 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors());
+// 1. Dynamic Origin Logic
+const allowedOrigins = [
+  'http://localhost:3000', // React default
+  'http://localhost:5173', // Vite default
+  'https://nonpersuasible-overlavishly-tarra.ngrok-free.dev' // ngrok
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Private-Network'],
+  credentials: true,
+  optionsSuccessStatus: 200
+}));
+
+// 2. Private Network Access (PNA) fix for ngrok -> localhost
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    res.header('Access-Control-Allow-Private-Network', 'true');
+  }
+  next();
+});
 app.use(helmet());
 
 // Proxy configuration

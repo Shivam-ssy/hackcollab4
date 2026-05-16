@@ -22,7 +22,9 @@ import {
   OrganizationRegistrationPage,
   TeamManagement,
   SponsorDashboard,
-  ManageSubmissionsPage
+  ManageSubmissionsPage,
+  TalentSearchPage,
+  JudgeDashboardPage
 } from './pages';
 import { ProtectedRoute } from './components/auth';
 
@@ -61,6 +63,16 @@ function App() {
           {/* Sponsor Dashboard */}
           <Route path="/sponsordashboard" element={<Layout />}>
             <Route index element={<SponsorDashboard />} />
+          </Route>
+
+          {/* Judge Dashboard */}
+          <Route path="/judge-dashboard" element={<Layout />}>
+            <Route index element={<JudgeDashboardPage />} />
+          </Route>
+          
+          {/* Talent Search */}
+          <Route path="/talent-search" element={<Layout />}>
+            <Route index element={<TalentSearchPage />} />
           </Route>
           
           {/* Event Routes */}

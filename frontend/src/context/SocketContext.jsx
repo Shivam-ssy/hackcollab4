@@ -24,7 +24,7 @@ export const SocketProvider = ({ children }) => {
     }
 
     // Connect to socket server
-    const socketInstance = io(import.meta.env.VITE_NOTIFICATION_SERVICE_URL || 'http://localhost:8003', {
+    const socketInstance = io(import.meta.env.VITE_NOTIFICATION_SERVICE_URL || '', {
       withCredentials: true,
       auth: {
         token: localStorage.getItem('token')
@@ -35,7 +35,7 @@ export const SocketProvider = ({ children }) => {
     socketInstance.on('connect', () => {
       // console.log('Socket connected');
       setConnected(true);
-      
+
       // Join user role room
       if (user && user.role) {
         socketInstance.emit('joinUserRole', user.role);
@@ -60,7 +60,7 @@ export const SocketProvider = ({ children }) => {
         socketInstance.disconnect();
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, user]);
 
   // Function to join an event room

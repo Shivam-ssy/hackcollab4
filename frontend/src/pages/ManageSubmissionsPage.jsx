@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { eventService } from '../services';
+import { useAuth } from '../context';
 
 const ManageSubmissionsPage = () => {
+  const { user } = useAuth();
   const { eventId } = useParams();
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +53,10 @@ const ManageSubmissionsPage = () => {
           <h1 className="text-3xl font-bold text-gray-900">Manage Submissions</h1>
           <p className="text-gray-600 mt-1">Review team projects and assign scores.</p>
         </div>
-        <Link to="/organizerdashboard" className="text-indigo-600 hover:text-indigo-800 font-medium">
+        <Link 
+          to={user?.role === 'JUDGE' ? "/judge-dashboard" : "/organizerdashboard"} 
+          className="text-indigo-600 hover:text-indigo-800 font-medium"
+        >
           &larr; Back to Dashboard
         </Link>
       </div>

@@ -14,7 +14,9 @@ const ProfilePage = () => {
     firstName: '',
     lastName: '',
     email: '',
-    college: ''
+    college: '',
+    skills: '',
+    resumeUrl: ''
   });
   const [updateSuccess, setUpdateSuccess] = useState(false);
 
@@ -35,10 +37,12 @@ const ProfilePage = () => {
         const response = await authService.getCurrentUser();
         setProfileData(response.user);
         setFormData({
-          firstName: response.user.firstName,
-          lastName: response.user.lastName,
-          email: response.user.email,
-          college: response.user.college
+          firstName: response.user.firstName || '',
+          lastName: response.user.lastName || '',
+          email: response.user.email || '',
+          college: response.user.college || '',
+          skills: response.user.skills ? response.user.skills.join(', ') : '',
+          resumeUrl: response.user.resumeUrl || ''
         });
         setError(null);
       } catch (err) {
@@ -64,8 +68,13 @@ const ProfilePage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const submitData = {
+        ...formData,
+        skills: formData.skills.split(',').map(s => s.trim()).filter(s => s)
+      };
+      
       // Call the updateProfile endpoint
-      const response = await authService.updateProfile(formData);
+      const response = await authService.updateProfile(submitData);
       
       // Update local profile data with the response
       setProfileData(response.user);
@@ -256,6 +265,33 @@ const ProfilePage = () => {
                         />
                         <p className="text-xs text-gray-500 mt-1">College cannot be changed directly</p>
                       </div>
+                      
+                      <div>
+                        <label htmlFor="skills" className="block text-sm font-medium text-gray-700 mb-1">Skills (comma separated)</label>
+                        <input
+                          type="text"
+                          id="skills"
+                          name="skills"
+                          value={formData.skills}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="e.g. React, Node.js, Python"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="resumeUrl" className="block text-sm font-medium text-gray-700 mb-1">Resume URL</label>
+                        <input
+                          type="url"
+                          id="resumeUrl"
+                          name="resumeUrl"
+                          value={formData.resumeUrl}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="https://link-to-your-resume.com"
+                        />
+                      </div>
+
                       <div className="flex space-x-4">
                         <button
                           type="submit"
@@ -292,7 +328,39 @@ const ProfilePage = () => {
                         <h3 className="text-sm font-medium text-gray-500">College</h3>
                         <p className="mt-1 text-lg text-gray-800">{profileData.college}</p>
                       </div>
-                      <div>
+
+                      <div className="mt-6 pt-6 border-t border-gray-200">
+                        <h3 className="text-sm font-medium text-gray-500 mb-3">Skills & Experience</h3>
+                        
+                        <div className="mb-4">
+                          <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Skills</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {profileData.skills && profileData.skills.length > 0 ? (
+                              profileData.skills.map(skill => (
+                                <span key={skill} className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                                  {skill}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-sm text-gray-500 italic">No skills added yet</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Resume</h4>
+                          {profileData.resumeUrl ? (
+                            <a href={profileData.resumeUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center">
+                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                              View Resume
+                            </a>
+                          ) : (
+                            <span className="text-sm text-gray-500 italic">No resume link provided</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mt-6 pt-6 border-t border-gray-200">
                         <button
                           onClick={() => setIsEditing(true)}
                           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"

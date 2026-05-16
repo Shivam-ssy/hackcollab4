@@ -12,6 +12,8 @@ const LoginPage = () => {
       navigate('/organizerdashboard');
     } else if (userRole === 'SUPER_ADMIN' || userRole === 'admin') {
       navigate('/admindashboard');
+    } else if (userRole === 'JUDGE') {
+      navigate('/judge-dashboard');
     } else {
       navigate('/events'); // students
     }

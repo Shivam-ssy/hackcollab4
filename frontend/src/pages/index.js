@@ -12,6 +12,8 @@ export { default as OrganizationRegistrationPage } from './OrganizationRegistrat
 export { default as TeamManagement } from './TeamManagement';
 export { default as SponsorDashboard } from './SponsorDashboard';
 export { default as ManageSubmissionsPage } from './ManageSubmissionsPage';
+export { default as TalentSearchPage } from './TalentSearchPage';
+export { default as JudgeDashboardPage } from './JudgeDashboardPage';
 
 // Event Pages
 export { default as EventsPage } from './EventsPage';

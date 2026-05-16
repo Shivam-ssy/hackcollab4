@@ -5,6 +5,7 @@ const Company = require('../models/Company');
 const Otp = require('../models/Otp');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const emailUtils = require('../utils/email.utils');
 
 // Simple util for OTP
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
@@ -132,10 +133,15 @@ exports.sendVerificationOtp = async (req, res) => {
     });
     await newOtp.save();
 
-    // In a real app, send email via nodemailer here
-    console.log(`[Email Mock] Verification OTP for ${email}: ${otp}`);
+    // Send the email using real nodemailer utility
+    await emailUtils.sendOtpEmail({
+      email,
+      subject: 'Verify your HackCollab Account',
+      message: 'Please use the OTP below to verify your email address.',
+      otp
+    });
 
-    res.json({ message: 'OTP sent to email (check server logs for mock)' });
+    res.json({ message: 'OTP sent to your email successfully.' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -180,7 +186,12 @@ exports.forgotPasswordOtp = async (req, res) => {
     });
     await newOtp.save();
 
-    console.log(`[Email Mock] Password Reset OTP for ${email}: ${otp}`);
+    await emailUtils.sendOtpEmail({
+      email,
+      subject: 'Reset Your HackCollab Password',
+      message: 'You have requested to reset your password. Please use the OTP below to proceed.',
+      otp
+    });
 
     res.json({ message: 'OTP sent for password reset' });
   } catch (err) {
@@ -230,7 +241,9 @@ exports.getCurrentUser = async (req, res) => {
         lastName: user.lastName,
         email: user.email,
         college: user.collegeId ? user.collegeId.name : null,
-        role: user.roleId ? user.roleId.name : null
+        role: user.roleId ? user.roleId.name : null,
+        skills: user.skills || [],
+        resumeUrl: user.resumeUrl || ''
       }
     });
   } catch (error) {
@@ -246,7 +259,7 @@ exports.updateProfile = async (req, res) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const { firstName, lastName } = req.body;
+    const { firstName, lastName, skills, resumeUrl } = req.body;
     
     // Find user by ID
     const user = await User.findById(userId);
@@ -261,6 +274,8 @@ exports.updateProfile = async (req, res) => {
     // Update user fields
     if (firstName) user.firstName = firstName;
     if (lastName) user.lastName = lastName;
+    if (skills !== undefined) user.skills = skills;
+    if (resumeUrl !== undefined) user.resumeUrl = resumeUrl;
     
     // Save updated user
     await user.save();
@@ -277,7 +292,9 @@ exports.updateProfile = async (req, res) => {
         lastName: user.lastName,
         email: user.email,
         college: user.collegeId ? user.collegeId.name : null,
-        role: user.roleId ? user.roleId.name : null
+        role: user.roleId ? user.roleId.name : null,
+        skills: user.skills,
+        resumeUrl: user.resumeUrl
       }
     });
   } catch (error) {
@@ -427,7 +444,7 @@ exports.registerCompanyAdmin = async (req, res) => {
       email,
       website,
       industry,
-      isApproved: true // For mock flow
+      isApproved: false // Requires superadmin approval
     });
     await company.save();
 
@@ -444,11 +461,75 @@ exports.registerCompanyAdmin = async (req, res) => {
       companyId: company._id,
       roleId: adminRole ? adminRole._id : undefined,
       status: 'ACTIVE',
-      isVerified: true
+      isVerified: false // Requires email verification
     });
     await user.save();
 
     res.status(201).json({ message: 'Company and admin account registered successfully.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.createJudge = async (req, res) => {
+  try {
+    const { firstName, lastName, email, password } = req.body;
+    
+    // Ensure request comes from a COLLEGE_ADMIN
+    if (req.user.role !== 'COLLEGE_ADMIN') {
+      return res.status(403).json({ message: 'Only College Admins can create judges' });
+    }
+
+    let user = await User.findOne({ email });
+    if (user) return res.status(400).json({ message: 'User already exists' });
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    let judgeRole = await Role.findOne({ name: 'JUDGE' });
+    if (!judgeRole) {
+      judgeRole = new Role({ name: 'JUDGE', permissions: [] });
+      await judgeRole.save();
+    }
+
+    user = new User({
+      firstName,
+      lastName,
+      email,
+      password: hashedPassword,
+      collegeId: req.user.collegeId,
+      roleId: judgeRole._id,
+      status: 'ACTIVE',
+      isVerified: true
+    });
+
+    await user.save();
+
+    res.status(201).json({ message: 'Judge account created successfully', user: { id: user._id, email } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getCollegeJudges = async (req, res) => {
+  try {
+    if (req.user.role !== 'COLLEGE_ADMIN') {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    const judgeRole = await Role.findOne({ name: 'JUDGE' });
+    if (!judgeRole) {
+      return res.json({ judges: [] }); // No judge role means no judges
+    }
+
+    const judges = await User.find({
+      collegeId: req.user.collegeId,
+      roleId: judgeRole._id
+    }).select('-password');
+
+    res.json({ judges });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

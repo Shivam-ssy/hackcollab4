@@ -1,14 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { eventService } from '../../services';
 
-const ProjectSubmission = ({ eventId, teamId, onSuccess }) => {
+const ProjectSubmission = ({ eventId, teamId, existingSubmission, onSuccess }) => {
   const [formData, setFormData] = useState({
-    githubUrl: '',
-    videoUrl: '',
-    description: ''
+    githubUrl: existingSubmission?.githubUrl || '',
+    videoUrl: existingSubmission?.videoUrl || '',
+    description: existingSubmission?.description || ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Update state if existingSubmission changes
+  useEffect(() => {
+    if (existingSubmission) {
+      setFormData({
+        githubUrl: existingSubmission.githubUrl || '',
+        videoUrl: existingSubmission.videoUrl || '',
+        description: existingSubmission.description || ''
+      });
+    }
+  }, [existingSubmission]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -35,8 +46,7 @@ const ProjectSubmission = ({ eventId, teamId, onSuccess }) => {
   };
 
   return (
-    <div className="bg-white shadow rounded-lg p-6 mt-6 border-t-4 border-green-500">
-      <h3 className="text-xl font-bold text-gray-900 mb-4">Submit Final Project</h3>
+    <div className="bg-white shadow rounded-lg p-6 border-t-4 border-green-500">
       {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>}
       
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -83,7 +93,7 @@ const ProjectSubmission = ({ eventId, teamId, onSuccess }) => {
           disabled={isLoading}
           className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
         >
-          {isLoading ? 'Submitting...' : 'Submit Project'}
+          {isLoading ? 'Submitting...' : existingSubmission ? 'Update Project' : 'Submit Project'}
         </button>
       </form>
     </div>

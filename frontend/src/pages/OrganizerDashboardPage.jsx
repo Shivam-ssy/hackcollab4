@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context';
 import { eventService, collegeService, paymentService } from '../services';
+import authService from '../services/authService';
 
 const OrganizerDashboardPage = () => {
   const { user } = useAuth();
@@ -18,6 +19,12 @@ const OrganizerDashboardPage = () => {
   const [error, setError] = useState(null);
   const [myCollege, setMyCollege] = useState(null);
   const [paymentLoading, setPaymentLoading] = useState(false);
+
+  // Judge Management State
+  const [newJudge, setNewJudge] = useState({ firstName: '', lastName: '', email: '', password: '' });
+  const [isCreatingJudge, setIsCreatingJudge] = useState(false);
+  const [judges, setJudges] = useState([]);
+  const [loadingJudges, setLoadingJudges] = useState(false);
 
   // Redirect if user is not an organizer
   useEffect(() => {
@@ -40,6 +47,9 @@ const OrganizerDashboardPage = () => {
           try {
             const collegeData = await collegeService.getMyCollege();
             setMyCollege(collegeData);
+            
+            // Fetch judges for this college
+            fetchJudges();
           } catch (err) {
             console.error('Failed to fetch college:', err);
           }
@@ -75,6 +85,18 @@ const OrganizerDashboardPage = () => {
     
     fetchEvents();
   }, [user]);
+
+  const fetchJudges = async () => {
+    try {
+      setLoadingJudges(true);
+      const data = await authService.getCollegeJudges();
+      setJudges(data.judges || []);
+    } catch (err) {
+      console.error('Failed to fetch judges:', err);
+    } finally {
+      setLoadingJudges(false);
+    }
+  };
 
   const handlePayment = async () => {
     try {
@@ -124,6 +146,22 @@ const OrganizerDashboardPage = () => {
       alert('Failed to initiate payment. Please try again.');
     } finally {
       setPaymentLoading(false);
+    }
+  };
+
+  const handleCreateJudge = async (e) => {
+    e.preventDefault();
+    if (!newJudge.email || !newJudge.password) return;
+    try {
+      setIsCreatingJudge(true);
+      await authService.createJudge(newJudge);
+      setNewJudge({ firstName: '', lastName: '', email: '', password: '' });
+      alert('Judge account created successfully!');
+      fetchJudges(); // Refresh the list
+    } catch (err) {
+      alert(err.message || 'Failed to create judge');
+    } finally {
+      setIsCreatingJudge(false);
     }
   };
 
@@ -197,6 +235,97 @@ const OrganizerDashboardPage = () => {
               </Link>
             </div>
           </div>
+
+          {/* Manage Judges Section */}
+          {user?.role === 'COLLEGE_ADMIN' && (
+            <div className="mt-8 bg-white p-6 rounded-lg shadow border border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Manage Judges</h2>
+              <p className="text-gray-600 mb-6">Create judge accounts for faculty or industry experts to score hackathon projects.</p>
+              
+              <form onSubmit={handleCreateJudge} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <input
+                  type="text"
+                  placeholder="First Name"
+                  className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  value={newJudge.firstName}
+                  onChange={(e) => setNewJudge({...newJudge, firstName: e.target.value})}
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Last Name"
+                  className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  value={newJudge.lastName}
+                  onChange={(e) => setNewJudge({...newJudge, lastName: e.target.value})}
+                  required
+                />
+                <input
+                  type="email"
+                  placeholder="Email"
+                  className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  value={newJudge.email}
+                  onChange={(e) => setNewJudge({...newJudge, email: e.target.value})}
+                  required
+                />
+                <input
+                  type="password"
+                  placeholder="Password"
+                  className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  value={newJudge.password}
+                  onChange={(e) => setNewJudge({...newJudge, password: e.target.value})}
+                  required
+                />
+                <div className="md:col-span-4 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isCreatingJudge}
+                    className="bg-purple-600 hover:bg-purple-700 text-white py-2 px-6 rounded-md transition duration-300 disabled:bg-gray-400"
+                  >
+                    {isCreatingJudge ? 'Creating...' : 'Create Judge Account'}
+                  </button>
+                </div>
+              </form>
+
+              {/* Judges List */}
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Active Judges</h3>
+                {loadingJudges ? (
+                  <p className="text-sm text-gray-500">Loading judges...</p>
+                ) : judges.length === 0 ? (
+                  <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded border">No judges created yet.</p>
+                ) : (
+                  <div className="overflow-x-auto border rounded-lg">
+                    <table className="min-w-full divide-y divide-gray-200 text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                          <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                          <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Access</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {judges.map(judge => (
+                          <tr key={judge._id}>
+                            <td className="px-4 py-3 whitespace-nowrap text-gray-900 font-medium">
+                              {judge.firstName} {judge.lastName}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-gray-600">
+                              {judge.email}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                All College Events
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Upcoming Events Section */}
           <div className="mt-8">

@@ -54,8 +54,8 @@ const EventsPage = () => {
     return true; // 'all' filter
   });
 
-  // Check if user is an organizer or admin
-  const isOrganizerOrAdmin = user && (user.role === 'organizer' || user.role === 'COLLEGE_ADMIN' || user.role === 'admin' || user.role === 'SUPER_ADMIN');
+  // Check if user is an organizer or college admin
+  const isOrganizerOrAdmin = user && (user.role === 'organizer' || user.role === 'COLLEGE_ADMIN');
   const canCreateEvent = isOrganizerOrAdmin;
 
   return (

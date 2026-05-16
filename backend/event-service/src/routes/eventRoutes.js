@@ -27,10 +27,18 @@ router.post('/teams', teamController.createTeam);
 router.get('/:eventId/teams', teamController.getTeamsForEvent);
 router.post('/teams/:teamId/request', teamController.requestJoin);
 router.post('/teams/:teamId/approve/:targetUserId', teamController.approveJoin);
+router.post('/teams/:teamId/addMember', teamController.addMember);
 
 const submissionController = require('../controllers/submissionController');
 router.post('/submissions', submissionController.createSubmission);
 router.get('/:eventId/submissions', submissionController.getSubmissionsForEvent);
 router.post('/:eventId/submissions/:submissionId/score', submissionController.scoreSubmission);
+
+const judgeController = require('../controllers/judgeController');
+router.post('/:eventId/judges', judgeController.assignJudge);
+router.get('/judges/assigned-events', judgeController.getAssignedEvents);
+
+const sponsorController = require('../controllers/sponsorController');
+router.post('/:eventId/sponsor', sponsorController.sponsorEvent);
 
 module.exports = router;

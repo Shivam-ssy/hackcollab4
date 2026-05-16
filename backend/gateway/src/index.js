@@ -26,21 +26,23 @@ app.use(limiter);
 // Middleware
 app.use(helmet()); // Set security headers
 // Define your allowed origins
+// 1. Dynamic Origin Logic
 const allowedOrigins = [
-  'http://localhost:3000', // Your local frontend port
-  'http://localhost:5173', // Vite default (if you use it)
-  'https://nonpersuasible-overlavishly-tarra.ngrok-free.dev' // Your ngrok tunnel
+  'http://localhost:3000', // React default
+  'http://localhost:5173', // Vite default
+  'https://nonpersuasible-overlavishly-tarra.ngrok-free.dev' // ngrok
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl) 
-    // or if the origin is in our allowed list
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+    // allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
     }
+    return callback(null, true);
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Private-Network'],
@@ -48,13 +50,14 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
-// This header MUST be present for ngrok -> localhost communication
+// 2. Private Network Access (PNA) fix for ngrok -> localhost
 app.use((req, res, next) => {
   if (req.method === 'OPTIONS') {
     res.header('Access-Control-Allow-Private-Network', 'true');
   }
   next();
-}); // Enable CORS for all routes
+});
+
 app.use(express.json()); // Parse JSON request body
 
 // Service endpoints

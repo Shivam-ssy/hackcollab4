@@ -12,6 +12,8 @@ const eventSchema = new mongoose.Schema({
   location: { type: String, required: true },
   image: { type: String, default: '' },
   tags: [{ type: String }],
+  isPublic: { type: Boolean, default: false },
+  judges: [{ type: mongoose.Schema.Types.ObjectId }],
   sponsors: [{
     companyId: { type: mongoose.Schema.Types.ObjectId, required: true },
     amount: { type: Number, default: 0 }

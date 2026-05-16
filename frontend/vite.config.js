@@ -10,7 +10,18 @@ export default defineConfig({
   },
   server: {
     host: true,
-    allowedHosts: true
+    allowedHosts: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',  // your gateway
+        changeOrigin: true,
+      },
+      '/socket.io': {
+        target: 'http://localhost:8003',  // wherever socket server runs
+        changeOrigin: true,
+        ws: true,  // ← this is the key part
+      }
+    }
   },
 
   // preview: {

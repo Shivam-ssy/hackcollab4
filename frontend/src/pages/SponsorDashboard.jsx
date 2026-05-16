@@ -27,8 +27,26 @@ const SponsorDashboard = () => {
     fetchEvents();
   }, []);
 
-  const handleSponsorClick = (eventId) => {
-    alert(`Mock Sponsorship: You have successfully pledged sponsorship for Event ID ${eventId}`);
+  const handleSponsorClick = async (eventId) => {
+    const amountStr = prompt('Enter sponsorship amount in dollars:', '1000');
+    if (amountStr === null) return;
+    
+    const amount = Number(amountStr);
+    if (isNaN(amount) || amount <= 0) {
+      alert('Please enter a valid amount greater than 0.');
+      return;
+    }
+
+    try {
+      await eventService.sponsorEvent(eventId, amount);
+      alert(`Successfully pledged $${amount} for Event ID ${eventId}`);
+      
+      // Refresh events to show updated sponsors
+      const data = await eventService.getAllEvents();
+      setEvents(data || []);
+    } catch (err) {
+      alert(err.message || 'Failed to pledge sponsorship');
+    }
   };
 
   if (loading) return <div className="p-8 text-center">Loading sponsorship opportunities...</div>;

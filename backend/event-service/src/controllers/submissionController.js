@@ -58,21 +58,57 @@ exports.scoreSubmission = async (req, res) => {
     const { eventId, submissionId } = req.params;
     const { score, feedback } = req.body;
     
-    // Only COLLEGE_ADMIN or SUPER_ADMIN should be able to score (handled by gateway)
-    
+    // Allow COLLEGE_ADMIN, SUPER_ADMIN, or assigned JUDGE
     const submission = await Submission.findOne({ _id: submissionId, eventId });
     if (!submission) return res.status(404).json({ message: 'Submission not found' });
+    
+    if (req.user.role === 'JUDGE') {
+      const Event = require('../models/Event');
+      const event = await Event.findById(eventId);
+      if (!event || !event.collegeId || event.collegeId.toString() !== req.user.collegeId) {
+        return res.status(403).json({ message: 'Not authorized to score this event' });
+      }
+    }
     
     submission.score = score;
     submission.feedback = feedback;
     await submission.save();
 
-    // Ideally, here we would make an HTTP call to the Leaderboard microservice
-    // to update the leaderboard using axios, e.g., axios.put('http://leaderboard-service/...')
-    // For now, we simulate the integration since they share a DB anyway if we imported it, 
-    // but sticking to microservices we return success so the frontend knows it's scored.
+    // Update leaderboard directly for all team members (since we share the DB)
+    const team = await Team.findById(submission.teamId);
+    if (team && team.members) {
+      const mongoose = require('mongoose');
+      for (const member of team.members) {
+        const userDoc = await mongoose.connection.db.collection('users').findOne({ _id: new mongoose.Types.ObjectId(member.userId) });
+        const collegeDoc = userDoc?.collegeId ? await mongoose.connection.db.collection('colleges').findOne({ _id: userDoc.collegeId }) : null;
+
+        const leaderboardEntry = await mongoose.connection.db.collection('leaderboards').findOne({ 
+          eventId: new mongoose.Types.ObjectId(eventId), 
+          userId: member.userId 
+        });
+        
+        if (leaderboardEntry) {
+          await mongoose.connection.db.collection('leaderboards').updateOne(
+            { _id: leaderboardEntry._id },
+            { $set: { score: Number(score), lastUpdated: new Date() } }
+          );
+        } else {
+          await mongoose.connection.db.collection('leaderboards').insertOne({
+            eventId: new mongoose.Types.ObjectId(eventId),
+            userId: member.userId,
+            userName: userDoc ? `${userDoc.firstName} ${userDoc.lastName}` : 'Unknown Participant',
+            score: Number(score),
+            achievements: ['Project Submitted'],
+            college: collegeDoc ? collegeDoc.name : 'Unknown College',
+            createdAt: new Date(),
+            lastUpdated: new Date(),
+            __v: 0
+          });
+        }
+      }
+    }
     
-    res.json({ message: 'Submission scored successfully', submission });
+    res.json({ message: 'Submission scored successfully and leaderboard updated', submission });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
